@@ -1,0 +1,43 @@
+// 5. Write a function ECDLP PohligHellman(q,E,P,r,Q) that breaks the Elliptic
+// Curve Discrete Logarithm Problem (ECDLP) with the following specifications:
+//
+// NAME: ECDLP_PohligHellman(q,E,P,r,Q)
+//
+// INPUTS: -q is the number of elements of the finite field over which is defined the curve
+//         -E is the elliptic curve
+//         -P is the base point of the curve
+//         -r is the order of the point P
+//         -Q is a multiple of P
+//
+// OUTPUT: -d is the factor of Q with respect to P
+//
+// Remark. In the previous functions q, r and d are integers: in particular q
+// defines the finite field Fq and 1 < d < r; E is an elliptic curve; P and Q
+// are points over the elliptic curve E such that Q = d · P. You will find the
+// description of the algorithms in the attached files.
+
+function ECDLP_PohlingHellman(q, E, P, r, Q)
+  coeff:=N/q; //Remark: N is divisible by q
+  coeffP:=coeff*P
+  ImageOfT:=[<i,i*coeffP> : i in [0..q-1]];
+  T:=map<ImageOfT[2], ImageOfT[1]>  | ImageOfT> //This is the nearest thing to a dictionary in Magma
+  
+  //qui è decisamente da migliorare... Non ricordo come si faceva il calcolo p-adico
+  e:=1;
+  while IsDivisibleBy(N,q^e) do
+    e+:=1;
+  end while;
+  //fine cosa che deve assolutamente essere migliorata
+  
+  K:=[]; //this will be the sequence that contains all the k_(i-1)
+  Qs:=[Q]; //this will be the sequence that contains all the Q_(i-1)
+  
+  K:=Append(K, T(coeff*Qs[1])); //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
+  
+  for i in [1..e-1] do
+    Qs:=Append(Qs, Qs[i]-K[i]*(q^i)*P;
+    K:=Append(K, T(coeff*Qs[i])); //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
+  end for;
+  
+  return &+[K[i]*Modexp(q,i-1,r) : i in [1..e]] mod r; 
+end function;
