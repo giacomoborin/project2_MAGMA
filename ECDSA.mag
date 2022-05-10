@@ -1,0 +1,33 @@
+function ECDSA_Signing(q,E,G,r,d,m)
+/*
+     INPUTS: -q is the number of elements of the finite
+              field over which is defined the curve
+             -E is the elliptic curve
+             -G is the base point of E
+             -r is the order of the point G
+             -d is Alice’s private key
+             -m is the message to be signed
+     OUTPUT: -(R,s) is the digital signature
+*/
+
+ 
+end function;
+
+
+function ECDSA_Verification(q,E,G,r,Q,m,R,s)
+/*
+     INPUTS: -q is the number of elements of the finite
+              field over which is defined the curve
+             -E is the elliptic curve
+             -G is the base point of E
+             -r is the order of the point G
+             -Q is Alice‚Äôs public key
+             -m is the message to be signed
+             -R is the first part of the digital signature
+             -s is the second part of the digital signature
+     OUTPUT: -bool is a boolean that says if the
+              sign is valid
+*/
+
+
+end function;
