@@ -9,7 +9,7 @@ function ECDSA_Signing(q,E,G,r,d,m)
              -m is the message to be signed
      OUTPUT: -(R,s) is the digital signature
 */
-	return 5;
+	return 0;
  
 end function;
 
