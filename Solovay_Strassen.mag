@@ -1,0 +1,41 @@
+function SolovayStrassen(n)
+/*
+	INPUTS:   -n integer to be tested.
+     	OUTPUTS:  -bool, a Boolean value.
+*/
+	for i in [1..10] do
+		a := Random(1,n-1);
+		x := JacobiSymbol(a, n) mod n;
+		if x eq 0 then
+			return false;
+		end if;
+		y := Modexp(a,(n-1) div 2, n);
+		if x ne y then
+			return false;
+		end if;
+	end for;
+	return true;
+end function;
+
+/*
+The output bool is true if and only if n is prime, false otherwise.
+Remark. Since this is a probabilistic algorithm, we require that you repeat
+the test for 10 times before outputting the result than n is prime.
+*/
+
+
+TestSolovay:=
+[ 61057, 68927, 77369, 85439, 101833, 142925, 146677, 219911, 235577, 252283, 289889, 315377, 320149, 332873, 341813,
+359255, 362717, 494251, 518179, 544129, 551519, 577937, 605021, 626159, 636023, 651587, 690061, 786337, 806389, 890191,
+896521, 900589, 912491, 921565, 926399, 944233, 960983, 994879, 1003463, 1028221 ];
+
+procedure test_solovay_strassen()
+	for test in TestSolovay do
+		if not SolovayStrassen(test) eq IsPrime(test) then
+			"Error! The problem is for test:\n";
+			test; break;
+		end if;
+	end for;
+end procedure;
+
+test_solovay_strassen();
