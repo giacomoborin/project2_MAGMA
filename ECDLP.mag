@@ -17,27 +17,32 @@
 // description of the algorithms in the attached files.
 
 function ECDLP_PohlingHellman(q, E, P, r, Q)
-  coeff:=r/q; //Remark: r is divisible by q
-  coeffP:=coeff*P;
-  ImageOfT:=[<i*coeffP,i> : i in [0..q-1]];
-  T:=map< [ImageOfT[i][2]: i in [0..q-1]] -> [ImageOfT[i][1]: i in [0..q-1]]  | ImageOfT>; //This is the nearest thing to a dictionary in Magma
+  FactorsOfr:=Factorization(r);
+  KSET:=[];
   
-  //qui è decisamente da migliorare... Non ricordo come si faceva il calcolo p-adico
-  e:=1;
-  while IsDivisibleBy(r,q^e) do
-    e+:=1;
-  end while;
-  //fine cosa che deve assolutamente essere migliorata
+  for i in [1..#FactorsOfr] do
   
-  K:=[]; //this will be the sequence that contains all the k_(i-1)
-  Qs:=[Q]; //this will be the sequence that contains all the Q_(i-1)
-  
-  K:=Append(K, T(coeff*Qs[1])); //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
-  
-  for i in [1..e-1] do
-    Qs:=Append(Qs, Qs[i]-K[i]*(q^i)*P);
-    K:=Append(K, T(coeff*Qs[i])); //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
+    prime:=FactorsOfr[i][1];
+    e:=FactorsOfr[i][2];
+    
+    coeff:=Integers()!(r/prime); //Remark: r is divisible by prime
+    coeffP:=coeff*P;
+    ImageOfT:=[<i*coeffP,i> : i in [0..prime-1]];
+    T:=map< [ImageOfT[i][1]: i in [1..prime]] -> [0..prime-1]  | ImageOfT>; //This is the nearest thing to a dictionary in Magma
+
+    K:=[]; //this will be the sequence that contains all the k_(i-1)
+    Qs:=[Q]; //this will be the sequence that contains all the Q_(i-1)
+
+    K:=Append(K, T(coeff*Qs[1])); //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
+
+    for i in [2..e] do
+      Qs:=Append(Qs, Qs[i-1]-(K[i-1]* ((prime^(i-2))*P) ));
+      K:=Append(K, T(Integers()!(coeff/(prime^(i-1)))*Qs[i])); //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
+    end for;
+
+    KSET:=Append(KSET, &+[K[i]*(prime^(i-1)) : i in [1..e]] mod (prime^e)); 
   end for;
+
+  return ChineseRemainderTheorem(KSET, [FactorsOfr[i][1]^FactorsOfr[i][2] : i in [1..#FactorsOfr]]);
   
-  return &+[K[i]*Modexp(q,i-1,r) : i in [1..e]] mod r; 
 end function;
