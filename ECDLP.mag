@@ -17,14 +17,14 @@
 // description of the algorithms in the attached files.
 
 function ECDLP_PohlingHellman(q, E, P, r, Q)
-  coeff:=N/q; //Remark: N is divisible by q
-  coeffP:=coeff*P
-  ImageOfT:=[<i,i*coeffP> : i in [0..q-1]];
-  T:=map<ImageOfT[2], ImageOfT[1]>  | ImageOfT> //This is the nearest thing to a dictionary in Magma
+  coeff:=r/q; //Remark: r is divisible by q
+  coeffP:=coeff*P;
+  ImageOfT:=[<i*coeffP,i> : i in [0..q-1]];
+  T:=map< [ImageOfT[i][2]: i in [0..q-1]] -> [ImageOfT[i][1]: i in [0..q-1]]  | ImageOfT>; //This is the nearest thing to a dictionary in Magma
   
   //qui è decisamente da migliorare... Non ricordo come si faceva il calcolo p-adico
   e:=1;
-  while IsDivisibleBy(N,q^e) do
+  while IsDivisibleBy(r,q^e) do
     e+:=1;
   end while;
   //fine cosa che deve assolutamente essere migliorata
@@ -35,7 +35,7 @@ function ECDLP_PohlingHellman(q, E, P, r, Q)
   K:=Append(K, T(coeff*Qs[1])); //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
   
   for i in [1..e-1] do
-    Qs:=Append(Qs, Qs[i]-K[i]*(q^i)*P;
+    Qs:=Append(Qs, Qs[i]-K[i]*(q^i)*P);
     K:=Append(K, T(coeff*Qs[i])); //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
   end for;
   
