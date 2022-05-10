@@ -28,6 +28,6 @@ function ECDSA_Verification(q,E,G,r,Q,m,R,s)
      OUTPUT: -bool is a boolean that says if the
               sign is valid
 */
-	return 0;
-
+	
+	return 5;
 end function;
