@@ -1,0 +1,8 @@
+function Factorization_Lehman(N)
+/*
+     INPUTS:  -N is the semiprime
+     OUTPUT:  -p is the smallest prime factor of N
+              -q is the largest prime factor of N
+*/
+	return 0;
+end function;
