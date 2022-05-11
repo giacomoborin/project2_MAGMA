@@ -1,0 +1,57 @@
+// Write a function called IndexCalculus(p,g,h) to compute the discrete logarithm 
+// of an element h ∈ Fp* = ⟨g⟩ with the following specifications:
+// 
+// NAME: IndexCalculus(p,g,h)
+// 
+// INPUTS: -p prime;
+//         -g primitive root modulo p;
+//         -h element of Fp*.
+// 
+// OUTPUTS: -x integer.
+// Where gx ≡ h mod p.
+
+
+function IndexCalculus(p,g,h)
+  FactorsOfp_1:=Factorization(p-1);
+  
+  TopB:=Ceiling(exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
+  B:=PrimesUpTo(TopB);
+  
+  VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
+  MatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
+  
+  exponent:=2;
+  repeat //Here we will find the elements g^i that are B-smooth
+    FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
+    if [FactorsOfgtoexponents[i][1]: i in [1..FactorsOfgtoexponents]] subset B then
+      VectorOfexponent:=Append(VectorOfexponent, exponent);
+      
+      counter:=0; //now we want to memorize the factorization setting the zero exponents
+      seq:=[];
+      for i in [1..#B] do
+        if (counter le #FactorsOfgtoexponents) and (B[i] eq FactorsOfgtoexponents[counter][1]) then
+          seq:=Append(seq, FactorsOfgtoexponents[counter][2]);
+          counter+:=1;
+        else
+          vector:=Append(seq, 0);
+        end if;
+      end for;
+      
+      MatrixOfexponent:=Append(MatrixOfexponent, seq);
+    end if;
+    exponent+:=1;
+  until #Exponents eq #B+1 do
+  
+  MatrixOfexponent:=Matrix(Integers(), #B+1, #B, MatrixOfexponent);
+  
+  Solutions:=[];
+  
+  for i in [1..#B+1] do
+    MatrixOfExponentCopied:=Matrix(GF(B[i]), #B+1, #B, MatrixOfexponent);
+    VectorOfexponentCopied:=[GF(B[i])!VectorOfexponent[i]: i in [1..#B]];
+    Solutions:=Append(Solutions, Solution( Transpose(MatrixOfexponent), VectorOfexponentCopied));
+  end for;
+  
+  
+end function;
+
