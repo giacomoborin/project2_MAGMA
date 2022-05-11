@@ -13,57 +13,78 @@
 
 function IndexCalculus(p,g,h)
   FactorsOfp_1:=Factorization(p-1);
-  
-  TopB:=Ceiling(exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
+ 
+  TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
   B:=PrimesUpTo(TopB);
   
   VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
-  MatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
-  
+  SeqMatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
+
   exponent:=2;
   repeat //Here we will find the elements g^i that are B-smooth
     FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
-    if [FactorsOfgtoexponents[i][1]: i in [1..FactorsOfgtoexponents]] subset B then
+    if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
       VectorOfexponent:=Append(VectorOfexponent, exponent);
       
-      counter:=0; //now we want to memorize the factorization setting the zero exponents
+      counter:=1; //now we want to memorize the factorization setting the zero exponents
       seq:=[];
       for i in [1..#B] do
         if (counter le #FactorsOfgtoexponents) and (B[i] eq FactorsOfgtoexponents[counter][1]) then
           seq:=Append(seq, FactorsOfgtoexponents[counter][2]);
           counter+:=1;
         else
-          vector:=Append(seq, 0);
+          seq:=Append(seq, 0);
         end if;
       end for;
-      
-      MatrixOfexponent:=Append(MatrixOfexponent, seq);
+
+      SeqMatrixOfexponent:=Append(SeqMatrixOfexponent, seq);
     end if;
     exponent+:=1;
-  until #Exponents eq #B+1 do
+  until #VectorOfexponent eq (#B)+1;
+
+//VectorOfexponent:=[12708,11311,15400,2731];
+//SeqMatrixOfexponent:=[3,4,1,3,0,2,3,3,1,3,1,4];
+//B:=PrimesUpTo(5);
+  Solutions:=<>;
   
-  MatrixOfexponent:=Matrix(Integers(), #B+1, #B, MatrixOfexponent);
-  
-  Solutions:=[];
-  
-  for i in [1..#B+1] do
-    MatrixOfExponentCopied:=Matrix(GF(B[i]), #B+1, #B, MatrixOfexponent);
-    VectorOfexponentCopied:=[GF(B[i])!VectorOfexponent[i]: i in [1..#B]];
-    Solutions:=Append(Solutions, Solution( Transpose(MatrixOfexponent), VectorOfexponentCopied));
+  for i in [1..#FactorsOfp_1] do
+    MatrixOfExponentCopied:=Matrix(GF(FactorsOfp_1[i][1]^FactorsOfp_1[i][2]), #B+1, #B, SeqMatrixOfexponent);
+    VectorOfexponentCopied:=[GF(FactorsOfp_1[i][1]^FactorsOfp_1[i][2])!VectorOfexponent[j]: j in [1..#VectorOfexponent]];
+    Solutions:=Append(Solutions, Solution( Transpose(MatrixOfExponentCopied), Vector(VectorOfexponentCopied)));
   end for;
-  
+
   AllTheLogs:=[];
   
-  for i in [1..#Vectorofexponent] do
-    AllTheLogs:=Append(AllTheLogs, ChineseRemainderTheorem([Solutions[j][i]: j in [1..#Solutions]], B));
+  for i in [1..#B] do
+    Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[i][1]^FactorsOfp_1[i][2]: i in [1..#FactorsOfp_1]]);
+    AllTheLogs:=Append(AllTheLogs, Chinese);
   end for;
   
   k:=1;
   repeat
+    k+:=1;
     attempt:=(h*Modexp(g,-k,p)) mod p;
-  until [Factorization(attempt)[i][1]: i in [1..FactorsOfgtoexponents]] subset Bd
+  until [Factorization(attempt)[i][1]: i in [1..#Factorization(attempt)]] subset B;
   
-  return k+&[AllTheLogs[i]*VectorOfexponent[i]: i in [1..#AllTheLogs]];
+  fact:=Factorization(attempt);
+  
+  counter:=1; //now we want to memorize the factorization setting the zero exponents
+  seqfact:=[];
+  for i in [1..#AllTheLogs] do
+    if (counter le #fact) and (B[i] eq fact[counter][1]) then
+      seqfact:=Append(seqfact, fact[counter][2]);
+      counter+:=1;
+    else
+      seqfact:=Append(seqfact, 0);
+    end if;
+  end for;
+  
+  return (k+ (&+[AllTheLogs[i]*seqfact[i]: i in [1..#AllTheLogs]]) ) mod (p-1);
   
 end function;
 
+//////////////////////////////TEST//////////////////////////////
+p:=18443;
+g:=37;
+h:=211;
+IndexCalculus(p,g,h);
