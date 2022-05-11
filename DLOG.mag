@@ -52,6 +52,18 @@ function IndexCalculus(p,g,h)
     Solutions:=Append(Solutions, Solution( Transpose(MatrixOfexponent), VectorOfexponentCopied));
   end for;
   
+  AllTheLogs:=[];
+  
+  for i in [1..#Vectorofexponent] do
+    AllTheLogs:=Append(AllTheLogs, ChineseRemainderTheorem([Solutions[j][i]: j in [1..#Solutions]], B));
+  end for;
+  
+  k:=1;
+  repeat
+    attempt:=(h*Modexp(g,-k,p)) mod p;
+  until [Factorization(attempt)[i][1]: i in [1..FactorsOfgtoexponents]] subset Bd
+  
+  return k+&[AllTheLogs[i]*VectorOfexponent[i]: i in [1..#AllTheLogs]];
   
 end function;
 
