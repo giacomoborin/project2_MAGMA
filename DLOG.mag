@@ -1,145 +1,156 @@
-// Write a function called IndexCalculus(p,g,h) to compute the discrete logarithm 
-// of an element h ∈ Fp* = ⟨g⟩ with the following specifications:
-// 
-// NAME: IndexCalculus(p,g,h)
-// 
-// INPUTS: -p prime;
-//         -g primitive root modulo p;
-//         -h element of Fp*.
-// 
-// OUTPUTS: -x integer.
-// Where gx ≡ h mod p.
+  // Write a function called IndexCalculus(p,g,h) to compute the discrete logarithm 
+  // of an element h ∈ Fp* = ⟨g⟩ with the following specifications:
+  // 
+  // NAME: IndexCalculus(p,g,h)
+  // 
+  // INPUTS: -p prime;
+  //         -g primitive root modulo p;
+  //         -h element of Fp*.
+  // 
+  // OUTPUTS: -x integer.
+  // Where gx ≡ h mod p.
 
 
-function IndexCalculus(p,g,h)
-  FactorsOfp_1:=Factorization(p-1);
- 
-  TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
-  B:=PrimesUpTo(TopB);
-  
-  VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
-  SeqMatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
-
-  exponent:=2;
-  repeat //Here we will find the elements g^i that are B-smooth
-    FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
-    if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
-      VectorOfexponent:=Append(VectorOfexponent, exponent);
-      
-      counter:=1; //now we want to memorize the factorization setting the zero exponents
-      seq:=[];
-      for i in [1..#B] do
-        if (counter le #FactorsOfgtoexponents) and (B[i] eq FactorsOfgtoexponents[counter][1]) then
-          seq:=Append(seq, FactorsOfgtoexponents[counter][2]);
-          counter+:=1;
-        else
-          seq:=Append(seq, 0);
-        end if;
-      end for;
-
-      SeqMatrixOfexponent:=Append(SeqMatrixOfexponent, seq);
-    end if;
-    exponent+:=1;
-  until #VectorOfexponent eq (#B)+1;
-
-//VectorOfexponent:=[12708,11311,15400,2731];
-//SeqMatrixOfexponent:=[3,4,1,3,0,2,3,3,1,3,1,4];
-//B:=PrimesUpTo(5);
-  Solutions:=<>;
-  
-  for i in [1..#FactorsOfp_1] do
-    MatrixOfExponentCopied:=Matrix(GF(FactorsOfp_1[i][1]^FactorsOfp_1[i][2]), #B+1, #B, SeqMatrixOfexponent);
-    VectorOfexponentCopied:=[GF(FactorsOfp_1[i][1]^FactorsOfp_1[i][2])!VectorOfexponent[j]: j in [1..#VectorOfexponent]];
-    Solutions:=Append(Solutions, Solution( Transpose(MatrixOfExponentCopied), Vector(VectorOfexponentCopied)));
-  end for;
-
-  AllTheLogs:=[];
-  
-  for i in [1..#B] do
-    Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[i][1]^FactorsOfp_1[i][2]: i in [1..#FactorsOfp_1]]);
-    AllTheLogs:=Append(AllTheLogs, Chinese);
-  end for;
-  
-  k:=1;
-  repeat
-    k+:=1;
-    attempt:=(h*Modexp(g,-k,p)) mod p;
-  until [Factorization(attempt)[i][1]: i in [1..#Factorization(attempt)]] subset B;
-  
-  fact:=Factorization(attempt);
-  
-  counter:=1; //now we want to memorize the factorization setting the zero exponents
-  seqfact:=[];
-  for i in [1..#AllTheLogs] do
-    if (counter le #fact) and (B[i] eq fact[counter][1]) then
-      seqfact:=Append(seqfact, fact[counter][2]);
-      counter+:=1;
-    else
-      seqfact:=Append(seqfact, 0);
-    end if;
-  end for;
-  
-  return (k+ (&+[AllTheLogs[i]*seqfact[i]: i in [1..#AllTheLogs]]) ) mod (p-1);
-  
-end function;
-
-//////////////////////////////TEST Documentation//////////////////////////////
-p:=18443;
-g:=37;
-h:=211;
-IndexCalculus(p,g,h);
-
-//////////////////////////////TV//////////////////////////////
 TestIndexC:=
-[
-    [ 51047, 48237, 7421, 7712 ],
-    [ 37799, 29997, 14261, 15137 ],
-    [ 66923, 7026, 47529, 24967 ],
-    [ 9467, 4069, 4731, 5151 ],
-    [ 48947, 20745, 1126, 40870 ],
-    [ 18443, 996, 6734, 1690 ],
-    [ 68507, 3744, 65266, 44877 ],
-    [ 57587, 32135, 22108, 43372 ],
-    [ 40739, 17037, 14652, 13517 ],
-    [ 68507, 52867, 16552, 32657 ],
-    [ 10463, 9185, 10200, 6002 ],
-    [ 54959, 24666, 46778, 24074 ],
-    [ 74759, 46021, 48415, 66168 ],
-    [ 27527, 3493, 13267, 20580 ],
-    [ 6599, 2029, 2893, 365 ],
-    [ 51407, 28640, 9983, 41557 ],
-    [ 82763, 74484, 81146, 45067 ],
-    [ 57899, 30468, 51614, 45233 ],
-    [ 98867, 7902, 44648, 90159 ],
-    [ 65687, 17464, 3223, 51130 ],
-    [ 17873543, 12333430, 8999653, 14959927 ],
-    [ 53120303, 45143788, 51740512, 23634721 ],
-    [ 99384323, 89595846, 52465950, 21850281 ],
-    [ 43610927, 37410031, 27831088, 3098395 ],
-    [ 6622619, 5841796, 6610454, 263951 ],
-    [ 96420683, 2054701, 20854098, 12409786 ],
-    [ 70768703, 11287259, 22065115, 12613902 ],
-    [ 81180119, 75594168, 61519867, 76757858 ],
-    [ 25999067, 25724635, 22817088, 18671191 ],
-    [ 72826043, 24925639, 13867098, 56359734 ],
-    [ 80283887, 75708476, 21321362, 75244436 ],
-    [ 78393803, 14678362, 72768057, 68864814 ],
-    [ 84411959, 11996976, 65302396, 79470770 ],
-    [ 62766323, 23585135, 28313009, 32030993 ],
-    [ 2806907, 289627, 1286670, 1770363 ],
-    [ 25992479, 11153393, 22965842, 3071855 ],
-    [ 47938343, 5838141, 47805883, 39988676 ],
-    [ 18720539, 5806114, 18015196, 11247990 ],
-    [ 93520067, 47677472, 51567693, 71140339 ],
-    [ 80711039, 19779831, 3544530, 28307137 ]
-];
+  [
+      [ 51047, 48237, 7421, 7712 ],
+      [ 37799, 29997, 14261, 15137 ],
+      [ 66923, 7026, 47529, 24967 ],
+      [ 9467, 4069, 4731, 5151 ],
+      [ 48947, 20745, 1126, 40870 ],
+      [ 18443, 996, 6734, 1690 ],
+      [ 68507, 3744, 65266, 44877 ],
+      [ 57587, 32135, 22108, 43372 ],
+      [ 40739, 17037, 14652, 13517 ],
+      [ 68507, 52867, 16552, 32657 ],
+      [ 10463, 9185, 10200, 6002 ],
+      [ 54959, 24666, 46778, 24074 ],
+      [ 74759, 46021, 48415, 66168 ],
+      [ 27527, 3493, 13267, 20580 ],
+      [ 6599, 2029, 2893, 365 ],
+      [ 51407, 28640, 9983, 41557 ],
+      [ 82763, 74484, 81146, 45067 ],
+      [ 57899, 30468, 51614, 45233 ],
+      [ 98867, 7902, 44648, 90159 ],
+      [ 65687, 17464, 3223, 51130 ],
+      [ 17873543, 12333430, 8999653, 14959927 ],
+      [ 53120303, 45143788, 51740512, 23634721 ],
+      [ 99384323, 89595846, 52465950, 21850281 ],
+      [ 43610927, 37410031, 27831088, 3098395 ],
+      [ 6622619, 5841796, 6610454, 263951 ],
+      [ 96420683, 2054701, 20854098, 12409786 ],
+      [ 70768703, 11287259, 22065115, 12613902 ],
+      [ 81180119, 75594168, 61519867, 76757858 ],
+      [ 25999067, 25724635, 22817088, 18671191 ],
+      [ 72826043, 24925639, 13867098, 56359734 ],
+      [ 80283887, 75708476, 21321362, 75244436 ],
+      [ 78393803, 14678362, 72768057, 68864814 ],
+      [ 84411959, 11996976, 65302396, 79470770 ],
+      [ 62766323, 23585135, 28313009, 32030993 ],
+      [ 2806907, 289627, 1286670, 1770363 ],
+      [ 25992479, 11153393, 22965842, 3071855 ],
+      [ 47938343, 5838141, 47805883, 39988676 ],
+      [ 18720539, 5806114, 18015196, 11247990 ],
+      [ 93520067, 47677472, 51567693, 71140339 ],
+      [ 80711039, 19779831, 3544530, 28307137 ]
+  ];
+/*
+  for test in TestIndexC do
+  //test;
+    p:=test[1];
+    g:=test[2];
+    h:=test[3];
+    test[4] eq IndexCalculus(p,g,h);
+  end for;
+*/
 
-for test in TestIndexC do
-test;
-  p:=test[1];
-  g:=test[2];
-  h:=test[3];
-  test[4];
-  IndexCalculus(p,g,h);
-end for;
 
+  //////I primi p sono di Sophie Germain p=2q+1//////
+  function IndexCalculus(p,g,h)
+    FactorsOfp_1:=Factorization(p-1);
+
+    //////Setting the bound//////
+    TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
+    //TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
+    //TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+    B:=PrimesUpTo(TopB);
+
+    //////Initialize variables//////
+    VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
+    SeqMatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
+
+    //////Looking for g^exponent s.t. it is B-smooth and setting variables//////
+    exponent:=2;
+    repeat
+      FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
+      //////Checking the B-smoot property//////
+      if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
+        //////We add the exponent g^exponent to the vector of exponents//////
+        VectorOfexponent:=Append(VectorOfexponent, exponent);
+
+        //////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponent//////
+        counter:=1;
+        seq:=[];
+        for prime in B do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
+          if (counter le #FactorsOfgtoexponents) and (prime eq FactorsOfgtoexponents[counter][1]) then
+            seq:=Append(seq, FactorsOfgtoexponents[counter][2]);
+            counter+:=1;
+          else
+            seq:=Append(seq, 0);
+          end if;
+        end for;
+
+        SeqMatrixOfexponent:=Append(SeqMatrixOfexponent, seq);
+      end if;
+      exponent+:=1;
+    until #VectorOfexponent eq (#B)+1;
+
+    //////In the next variable, there will be a matrix and a vector//////
+    Solutions:=<>;
+
+    //////This cycle will find the solution in modulus 
+    for i in [1..2] do //#FactorsOfp_1=2
+      prime:=FactorsOfp_1[i][1]; //FactorsOfp_1[i][2]=1
+      MatrixOfExponentCopied:=Matrix( GF(prime), #B+1, #B, SeqMatrixOfexponent );
+      VectorOfexponentCopied:=[GF(prime)!VectorOfexponent[j]: j in [1..#VectorOfexponent]];
+      Solutions:=Append(Solutions, Solution( Transpose(MatrixOfExponentCopied), Vector(VectorOfexponentCopied)));
+    //////////////////////////GUARDARE QUA DENTRO PER DEGLI ERRORI/////////////////
+    end for;
+
+    AllTheLogs:=[];
+
+    for i in [1..#B] do
+      Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[i][1]^FactorsOfp_1[i][2]: i in [1..#FactorsOfp_1]]);
+      AllTheLogs:=Append(AllTheLogs, Chinese);
+    end for;
+
+    k:=1;
+    repeat
+      k+:=1;
+      attempt:=(h*Modexp(g,-k,p)) mod p;
+    until [Factorization(attempt)[i][1]: i in [1..#Factorization(attempt)]] subset B;
+
+    fact:=Factorization(attempt);
+
+    counter:=1; //now we want to memorize the factorization setting the zero exponents
+    seqfact:=[];
+    for i in [1..#AllTheLogs] do
+      if (counter le #fact) and (B[i] eq fact[counter][1]) then
+        seqfact:=Append(seqfact, fact[counter][2]);
+        counter+:=1;
+      else
+        seqfact:=Append(seqfact, 0);
+      end if;
+    end for;
+
+    return (k+ (&+[AllTheLogs[i]*seqfact[i]: i in [1..#AllTheLogs]]) ) mod (p-1);
+
+  end function;
+
+  //////////////////////////////TEST Documentation//////////////////////////////
+  p:=18443;
+  g:=37;
+  h:=211;
+  8500 eq IndexCalculus(p,g,h);
+  //////////////////////////////TV//////////////////////////////
+  
