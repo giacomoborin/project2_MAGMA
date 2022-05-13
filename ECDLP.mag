@@ -45,7 +45,7 @@ function ECDLP_PohlingHellman(q, E, P, r, Q)
     KSET:=Append(KSET, &+[K[i]*(prime^(i-1)) : i in [1..e]] mod (prime^e)); 
   end for;
 
-  return ChineseRemainderTheorem(KSET, [FactorsOfr[i][1]^FactorsOfr[i][2] : i in [1..#FactorsOfr]]);
+  return CRT(KSET, [FactorsOfr[i][1]^FactorsOfr[i][2] : i in [1..#FactorsOfr]]);
   
 end function;
 
