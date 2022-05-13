@@ -1,3 +1,9 @@
+
+function JacobySymbol(a,n)
+	return 0;
+end function;
+
+
 function SolovayStrassen(n)
 /*
 	INPUTS:   -n integer to be tested.
@@ -16,6 +22,7 @@ function SolovayStrassen(n)
 	end for;
 	return true;
 end function;
+
 
 /*
 The output bool is true if and only if n is prime, false otherwise.
