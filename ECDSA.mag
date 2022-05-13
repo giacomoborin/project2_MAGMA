@@ -39,8 +39,9 @@ function ECDSA_Verification(q,E,G,r,Q,m,R,s)
      OUTPUT: -bool is a boolean that says if the
               sign is valid
 */
-	v1 := m*Modinv(s[2],r) mod r;
-	v2 := s[1]*Modinv(s[2],r) mod r;
+	i := Modinv(s[2],r);
+	v1 := m*i mod r;
+	v2 := s[1]*i mod r;
 	return (Integers()!((v1*G + v2*R)[1] - s[1]) mod r) eq 0;
 end function;
 
