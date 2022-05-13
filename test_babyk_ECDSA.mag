@@ -1,0 +1,195 @@
+load "ECDSA.mag";//NB: potebbe essere necessario cambiare qualcosa qui
+
+/*
+
+    FUNZIONI DI VERIFICA / TEST CHE PUOI CHIAMARE DOPO AVER ESEGUITO IL FILE
+
+        test_correttezza();
+
+        test_velocita_sign();
+
+        test_velocita_veri();
+
+
+*/
+
+//SCELTA DELLE VERSIONI DELLA FIRMA (aggiungi eventuale descrizione)
+Sign1:=ECDSA_Signing1; Sdescr1:="prima versione di firma";
+Sign2:=ECDSA_Signing1; Sdescr2:="seconda versione di firma";
+
+
+
+//SCELTA DELLE VERSIONI DELLA VERIFICA
+Veri1:=ECDSA_Verification3; Vdescr1:="prima versione di verifica";
+Veri2:=ECDSA_Verification2; Vdescr2:="seconda versione di verifica";
+
+
+
+//PARAMETRI DEL TEST
+len_test:= 100; //numero di test (q, EC, P.. scelti ogni volta diversi)
+len_M:=200; //numero di messaggi per curva
+
+
+function test_generator(len_M)
+
+a:=26065687;//estremo inferiore
+b:=20000000000;//estremo superiore
+q:=Random(a,b);
+q:=NextPrime(q);
+
+//scelta dei parametri. empiricamente si vedeb che nella fattorizzazione ci sono pochi fattori (4 o 5) di cui un paio piccoli e uno molto grande. Emuliamo la cosa
+
+soglia:=q div 100;//Per noi P non è per forza un generatore mentre nei loro test vectors sembra di si, usiamolo anche per scegliere E1,E2
+
+//scelta dei parametri. empiricamente si vedeb che nella fattorizzazione ci sono pochi fattori (4 o 5) di cui un paio piccoli e uno molto grande. Emuliamo la cosa
+E1:=Random(soglia-1000,soglia+100000);
+E1:=NextPrime(E1)*Random(1,100);
+
+E2:=Random(soglia-1000,soglia+100000);
+E2:=NextPrime(E1)*Random(1,100);
+
+E:=EllipticCurve( [GF(q)|E1,E2]  );
+
+if (#E lt soglia div 1000) or (#E gt 100000*soglia) then 
+    return test_generator(len_M);
+end if;
+
+//seleziona un punto (e quindi r) di grande ordine dato q
+max_iter:=500;
+iter:=0;
+for point in E do//forse questo crea bias
+    if point eq E!0 then continue; end if;
+    iter+:=1;
+    F:=Factorization(Order(point));
+    if F[#F][1] gt (soglia div 100) then
+        P:=(Order(point) div F[#F][1])*point;
+        r:=F[#F][1];
+        break;
+    end if;
+    if iter ge max_iter then 
+        return test_generator(len_M);//abortiamo il test. Speriamo non crei loop infiniti
+    end if;
+end for;
+
+//key generation
+d:=Random((soglia div 1000),r-1);
+Q:=d*P;
+
+//cast
+P:=[Integers()|P[1],P[2],P[3]];
+Q:=[Integers()|Q[1],Q[2],Q[3]];
+return <<<q,E1,E2,P,r,Q>,<d>>,[Random(1,r-1) : _ in [1..len_M]]>;
+end function;
+
+//costruzione del test vero e proprio
+MyTestECDSA:=[*test_generator(len_M) : _ in [1..len_test]*];
+
+
+procedure test_correttezza() //testa la correttezza di Sign1 e Veri1
+print "\n\n\n\n     INIZIO TEST DI CORRETTEZZA";
+for test in MyTestECDSA do
+	el:=test[1];
+	M:=test[2];
+	q:=el[1][1];
+	E:=EllipticCurve( [GF(q)!el[1][2],el[1][3]]  );
+	P:=E!el[1][4];
+	r:=el[1][5];
+	d:=el[2][1];
+	for m in M do
+		R,s:=Sign1(q,E,P,r,d,m);
+		if not Veri1(q, E, P, r, E!el[1][6], m, R, s) then
+			"Error! These are test and m:\n";
+			test; m; 
+			break; 
+		end if;
+	end for;
+end for;
+print "\n       FINE TEST CORRETTEZZA!";
+end procedure;
+
+procedure test_velocita_sign()
+    print "\n\n\n\nTEST DI VELOCITA' DELLA FIRMA";
+    print "\n\n",Sdescr1;
+    time
+    for test in MyTestECDSA do
+	el:=test[1];
+	M:=test[2];
+	q:=el[1][1];
+	E:=EllipticCurve( [GF(q)!el[1][2],el[1][3]]  );
+	P:=E!el[1][4];
+	r:=el[1][5];
+	d:=el[2][1];
+	for m in M do
+		R,s:=Sign1(q,E,P,r,d,m);
+	end for;
+    end for;
+    print "\n\n",Sdescr2;
+    time
+    for test in MyTestECDSA do
+	el:=test[1];
+	M:=test[2];
+	q:=el[1][1];
+	E:=EllipticCurve( [GF(q)!el[1][2],el[1][3]]  );
+	P:=E!el[1][4];
+	r:=el[1][5];
+	d:=el[2][1];
+	for m in M do
+		R,s:=Sign2(q,E,P,r,d,m);
+	end for;
+    end for;
+end procedure;
+
+procedure test_velocita_veri()
+    print "\n\n\n\nTEST DI VELOCITA' DELLA VERIFICA";
+    sign:=[];
+    i:=1;
+    for test in MyTestECDSA do
+	el:=test[1];
+	m:=test[2][1];
+	q:=el[1][1];
+	E:=EllipticCurve( [GF(q)!el[1][2],el[1][3]]  );
+	P:=E!el[1][4];
+	r:=el[1][5];
+	d:=el[2][1];
+    		R,s:=Sign1(q,E,P,r,d,m);
+    sign[i]:=<R,s>;
+    i+:=1;
+    end for;
+
+i:=1;
+print "\n\n",Vdescr1;
+time for test in MyTestECDSA do
+	el:=test[1];
+	m:=test[2][1];
+	q:=el[1][1];
+	E:=EllipticCurve( [GF(q)!el[1][2],el[1][3]]  );
+	P:=E!el[1][4];
+	r:=el[1][5];
+	d:=el[2][1];
+	temp:=Veri1(q, E, P, r, E!el[1][6], m, sign[i][1], sign[i][2]);
+    i+:=1;
+end for;
+i:=1;
+print "\n\n",Vdescr2;
+time for test in MyTestECDSA do
+	el:=test[1];
+	m:=test[2][1];
+	q:=el[1][1];
+	E:=EllipticCurve( [GF(q)!el[1][2],el[1][3]]  );
+	P:=E!el[1][4];
+	r:=el[1][5];
+	d:=el[2][1];
+	temp:=Veri2(q, E, P, r, E!el[1][6], m, sign[i][1], sign[i][2]);
+    i+:=1;
+end for;
+end procedure;
+
+
+
+
+
+test_correttezza();
+
+test_velocita_sign();
+
+test_velocita_veri();
