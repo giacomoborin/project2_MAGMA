@@ -123,15 +123,16 @@ TestIndexC:=
       Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[i][1]^FactorsOfp_1[i][2]: i in [1..#FactorsOfp_1]]);
       AllTheLogs:=Append(AllTheLogs, Chinese);
     end for;
-
+    
+    //////we find h*g^(-k) B-smooth -> log(g,h)=k+sum(exponentb*log(g,b) : for b in B) 
     k:=1;
     repeat
       k+:=1;
       attempt:=(h*Modexp(g,-k,p)) mod p;
-    until [Factorization(attempt)[i][1]: i in [1..#Factorization(attempt)]] subset B;
-
-    fact:=Factorization(attempt);
-
+      fact:=Factorization(attempt);
+    until [fact[i][1]: i in [1..#fact]] subset B;
+    
+    
     counter:=1; //now we want to memorize the factorization setting the zero exponents
     seqfact:=[];
     for i in [1..#AllTheLogs] do
