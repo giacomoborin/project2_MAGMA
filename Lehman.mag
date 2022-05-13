@@ -85,7 +85,7 @@ function Factorization_Lehman(N)
 			s := (s mod m) + 1;
 		end while;
 	end for;
-	return 1;
+	return 1,N;
 end function;
 
 
@@ -109,13 +109,22 @@ TestLehman:=[ car<IntegerRing(), IntegerRing(), IntegerRing()> | <2019211151107,
 
 procedure test_lehman()
 for test in TestLehman do
-	test;
+	//test;
 	p,q:=Factorization_Lehman(test[1]);
 	if (p ne test[2]) or (q ne test[3]) then
 		"Error! The problem is for test:\n";
-		test; p; q; break;
+		test; p; q; //break;
 	end if;
 end for;
 end procedure;
 
-test_lehman();
+time test_lehman();
+
+
+problems := [<1408274616019, 799723, 1760953>, <1422344924873, 814687, 1745879>];
+for test in problems do
+	n := test[1];
+	p := test[2];
+	r := Ceiling(n^(1/3));
+	Sqrt((n/(r+1))) lt p;
+end for;
