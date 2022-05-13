@@ -1,6 +1,55 @@
+function prop1(S)
+	S[1] := S[1] mod S[2];
+	return S;
+end function;
+
+function prop32(S)
+	seq := Intseq(S[1],2);
+	v2 := Index(seq,1) - 1;
+	S[1]:=Seqint(seq[(v2+1)..#seq],2);
+	if (v2 mod 2 eq 1) and ((S[2] mod 8) in [3,5]) then
+		S[3]:=S[3]*(-1);
+	end if;
+	return S;
+end function;
+
+function prop4(S)
+	if (S[1] mod 4 eq 3) and (S[2] mod 4 eq 3) then
+		S[3] := S[3]*(-1);
+	end if;
+	buff := S[1];
+	S[1] := S[2];
+	S[2] := buff;
+	return S;
+end function;
+
 
 function JacobySymbol(a,n)
-	return 0;
+	S := [a,n,1];
+	while S[1] gt 1 do
+		/*
+		S := prop32(S);
+		S := prop4(S);
+		S := prop1(S);
+		*/
+		seq := Intseq(S[1],2);
+		v2 := Index(seq,1) - 1;
+		S[1]:=Seqint(seq[(v2+1)..#seq],2);
+		if (v2 mod 2 eq 1) and ((S[2] mod 8) in [3,5]) then
+			S[3]:=S[3]*(-1);
+		end if;
+
+		if (S[1] mod 4 eq 3) and (S[2] mod 4 eq 3) then
+			S[3] := S[3]*(-1);
+		end if;
+		buff := S[1];
+		S[1] := S[2];
+		S[2] := buff;
+
+		S[1] := S[1] mod S[2];	
+
+	end while;
+	return S[3];
 end function;
 
 
