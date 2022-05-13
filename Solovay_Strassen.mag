@@ -40,6 +40,10 @@ the test for 10 times before outputting the result than n is prime.
 // our file with lots of test vectors
 load "new_test_vectors.mag";
 
+S := [ Random(10^5,10^7) : _ in [1..(20*6100)]];
+TestSolovay := [ s : s in S | s mod 2 eq 1];
+#TestSolovay;
+
 procedure test_solovay_strassen()
 	for test in TestSolovay do
 		if not SolovayStrassen(test) eq IsPrime(test) then
