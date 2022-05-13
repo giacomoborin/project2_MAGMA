@@ -1,2 +1,5 @@
 # PDF 
 *.pdf
+
+# file strani di MacOS
+.DS_Store
