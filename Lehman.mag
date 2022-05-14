@@ -50,7 +50,7 @@ function Factorization_Lehman(N)
 			//	k;
 			//end if;
 			x,u := isqrt(4*k*n); 
-			buff,t := isqrt(n/k);
+			buff,t := isqrt(n div k);
 			j := (buff - 1) div (4*(r+1));
 			if ((x+k) mod 2) eq 0 then 
 				i1 := 1;
