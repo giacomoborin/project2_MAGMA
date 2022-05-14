@@ -54,8 +54,8 @@ function Factorization_Lehman(N)
 			j := (buff - 1) div (4*(r+1));
 			if ((x+k) mod 2) eq 0 then 
 				i1 := 1;
-				//u := u + 2*x +1;
-				//x := x + 1;
+				u := u + 2*x +1;
+				x := x + 1;
 			else
 				i1 := 0;
 			end if;
@@ -71,7 +71,7 @@ function Factorization_Lehman(N)
 			// ************ PROBLEMA GROSSO *************
 			// PERCHÈ TOGLIENDO STE RIGHE FUNZIONA ??????
 			// ******************************************
-			/*
+			
 			if odd then 
 				if ((k+n) mod 4) eq (x mod 4) then
 					i1 := i1 + 2;
@@ -79,7 +79,7 @@ function Factorization_Lehman(N)
 					x := x + 2;
 				end if;
 			end if;
-			*/
+			
 
 			for i in [i1..(j+1) by jump] do
 				if QR[(u-1) mod qr_mod + 1] then
@@ -90,6 +90,13 @@ function Factorization_Lehman(N)
 						q := n div p;
 						return Min(p,q),Max(p,q);
 					end if;
+				end if;
+				if odd then
+					u := u + 8*(x+2);
+					x := x+ 4;
+				else
+					u := u + 4*(x+1);
+					x := x + 2;
 				end if;
 			end for;
 
@@ -119,23 +126,26 @@ TestLehman:=[ car<IntegerRing(), IntegerRing(), IntegerRing()> | <2019211151107,
 821851, 1744331>, <1321421826449, 761389, 1735541>, <814790141941, 548459, 1485599>, <1585243208933, 878021, 1805473>, 
 <1408274616019, 799723, 1760953>, <1422344924873, 814687, 1745879>, <994170394423, 642977, 1546199>];
 
-load "new_test_lehman.mag";
+//load "new_test_lehman.mag";
 
 procedure test_lehman()
-for test in TestLehman do
-	//test;
-	n := test[1];
-	p := test[2];
-	r := Floor(n^(1/3)) + 1;
-	if not (Sqrt((n/(r+1))) lt p and p le n^(1/2)) then
-		"Caso no";
-	end if;
-	p,q:=Factorization_Lehman(test[1]);
-	if (p ne test[2]) or (q ne test[3]) then
-				"\nError! The problem is for test:",test; 
-		"Output:",p, q; //break;
-	end if;
-end for;
+	pb := [<1,1,1>];
+	for test in TestLehman do
+		//test;
+		n := test[1];
+		p := test[2];
+		r := Floor(n^(1/3)) + 1;
+		if not (Sqrt((n/(r+1))) lt p and p le n^(1/2)) then
+			"Caso no";
+		end if;
+		p,q:=Factorization_Lehman(test[1]);
+		if (p ne test[2]) or (q ne test[3]) then
+			Append(~pb,test);
+			"\nError! The problem is for test:",test; 
+			"Output:",p, q; //break;
+		end if;
+	end for;
+	pb;
 end procedure;
 
 time test_lehman();
