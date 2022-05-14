@@ -64,104 +64,99 @@ TestIndexC:=
   end for;
 */
 
+function IntermediateZeroPadding(B, factors)
+//////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponen//////
+  counter:=1;
+  seq:=[];
+  for prime in B do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
+    if (counter le #factors) and (prime eq factors[counter][1]) then
+      seq:=Append(seq, factors[counter][2]);
+      counter+:=1;
+    else
+      seq:=Append(seq, 0);
+    end if;
+  end for;
+  return seq;
+end function;
 
-  //////I primi p sono di Sophie Germain p=2q+1//////
-  function IndexCalculus(p,g,h)
-    FactorsOfp_1:=Factorization(p-1);
 
-    //////Setting the bound//////
-    //TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
-    TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
-    //TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
-    B:=PrimesUpTo(TopB);
 
-    //////Initialize variables//////
-    VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
-    SeqMatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
+//////I primi p sono di Sophie Germain p=2q+1//////
+function IndexCalculus(p,g,h)
+  FactorsOfp_1:=Factorization(p-1);
 
-    //////Looking for g^exponent s.t. it is B-smooth and setting variables//////
-    exponent:=2;
-    repeat
-      FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
-      //////Checking the B-smoot property//////
-      if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
-        //////We add the exponent g^exponent to the vector of exponents//////
-        VectorOfexponent:=Append(VectorOfexponent, exponent);
-        
-        //////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponent//////
-        counter:=1;
-        seq:=[];
-        for prime in B do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
-          if (counter le #FactorsOfgtoexponents) and (prime eq FactorsOfgtoexponents[counter][1]) then
-            seq:=Append(seq, FactorsOfgtoexponents[counter][2]);
-            counter+:=1;
-          else
-            seq:=Append(seq, 0);
-          end if;
-        end for;
-        
-        SeqMatrixOfexponent:=Append(SeqMatrixOfexponent, seq);
-      end if;
-      exponent+:=1;
-    until #VectorOfexponent eq (#B)+1;
-    
-    //////In the next variable, there will be a vectors of different universe//////
-    Solutions:=<>;
-    
-    //////This cycle will find the solution in modulus//////
-    for i in [1..2] do //#FactorsOfp_1=2
-      prime:=FactorsOfp_1[i][1]; //FactorsOfp_1[i][2]=1
-      MatrixOfExponentCopied:=Matrix( GF(prime), #B+1, #B, SeqMatrixOfexponent );
-MatrixOfExponentCopied;
-"AAAAAAAAAAAAAAA";
-      VectorOfexponentCopied:=[GF(prime)!VectorOfexponent[j]: j in [1..#VectorOfexponent]];
-VectorOfexponentCopied;
-"BBBBBBBBBBBBBBB";
-      Solutions:=Append(Solutions, Solution( Transpose(MatrixOfExponentCopied), Vector(VectorOfexponentCopied)));
-Solutions;
-    end for;
-    
-    AllTheFinalLogs:=[];
-    
-    for i in [1..#B] do
-      Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[j][1]: j in [1..#FactorsOfp_1]]);
-      AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
-    end for;
-    
-/*   
-for i:=1 to #B do
-  B[i] eq Modexp(g,Integers()!AllTheFinalLogs[i],p);
-end for;
-*/
+  //////Setting the bound//////
+  //TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
+  TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
+  //TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+  B:=PrimesUpTo(TopB);
 
-    //////we find h*g^(-k) B-smooth -> log(g,h)=k+sum(exponentb*log(g,b) : for b in B)//////
-    k:=1;
-    repeat
-      k+:=1;
-      attempt:=(h*Modexp(g,-k,p)) mod p;
-      fact:=Factorization(attempt);
-    until [fact[i][1]: i in [1..#fact]] subset B;
-    
-    
-    counter:=1; //now we want to memorize the factorization setting the zero exponents
-    seqfact:=[];
-    for i in [1..#AllTheFinalLogs] do
-      if (counter le #fact) and (B[i] eq fact[counter][1]) then
-        seqfact:=Append(seqfact, fact[counter][2]);
-        counter+:=1;
-      else
-        seqfact:=Append(seqfact, 0);
-      end if;
-    end for;
+  //////Initialize variables//////
+  VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
+  SeqMatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
 
-    return (k+ (&+[AllTheFinalLogs[i]*seqfact[i]: i in [1..#AllTheFinalLogs]]) ) mod (p-1);
+  //////Looking for g^exponent s.t. it is B-smooth and setting variables//////
+  exponent:=2;
+  repeat
+    FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
+    //////Checking the B-smoot property//////
+    if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
+      //////We add the exponent g^exponent to the vector of exponents//////
+      VectorOfexponent:=Append(VectorOfexponent, exponent);
+      
+      //////IntermediatePadding//////
+      seq:=IntermediateZeroPadding(B, FactorsOfgtoexponents);
+      
+      SeqMatrixOfexponent:=Append(SeqMatrixOfexponent, seq);
+    end if;
+    exponent+:=1;
+  until #VectorOfexponent eq (#B)+1;
+  
+//###[Modexp(g,VectorOfexponent[i],p) eq &*[Modexp(B[j], SeqMatrixOfexponent[i][j], p): j in [1..#B]]: i in [1..#B+1]];
 
-  end function;
+  //////In the next variable, there will be a vectors of different universe//////
+  Solutions:=<>;
+  
+  //////This cycle will find the solution in modulus//////
+  for i in [1..2] do //#FactorsOfp_1=2
+    prime:=FactorsOfp_1[i][1]; //FactorsOfp_1[i][2]=1
+    MatrixOfexponentCopied:=Matrix( GF(prime), #B+1, #B, SeqMatrixOfexponent );
+    VectorOfexponentCopied:=[GF(prime)!VectorOfexponent[j]: j in [1..#B+1]];
+    LogFactorsOfp_1:=Solution( Transpose(MatrixOfexponentCopied), Vector(VectorOfexponentCopied));
+    Solutions:=Append(Solutions, LogFactorsOfp_1);
+    VectorOfexponent;
+    LogFactorsOfp_1;
+  end for;
 
-  //////////////////////////////TEST Documentation//////////////////////////////
-  p:=18443;
-  g:=37;
-  h:=211;
-  8500 eq IndexCalculus(p,g,h);
-  //////////////////////////////TV//////////////////////////////
+  //////This sequence will hold the log(g,B[i]) mod p-1a//////
+  AllTheFinalLogs:=[];
+
+  for i in [1..#B] do
+    Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[j][1]: j in [1..#FactorsOfp_1]]);
+    AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
+  end for;
+  
+//[AllTheFinalLogs[i] eq Log(GF(p)!g, GF(p)!B[i]): i in [1..#B]];
+
+  //////we find h*g^(-k) B-smooth -> log(g,h)=k+sum(exponentb*log(g,b) : for b in B)//////
+  k:=1;
+  repeat
+    k+:=1;
+    attempt:=(h*Modexp(g,-k,p)) mod p;
+    fact:=Factorization(attempt);
+  until [fact[i][1]: i in [1..#fact]] subset B;
+
+  //////IntermediatePadding//////
+  seqfact:=IntermediateZeroPadding(B, fact);
+  
+  return (k+ (&+[seqfact[i]*AllTheFinalLogs[i]: i in [1..#AllTheFinalLogs]]) ) mod (p-1);
+
+end function;
+
+//////////////////////////////TEST Documentation//////////////////////////////
+p:=18443;
+g:=37;
+h:=211;
+h eq Modexp(g,IndexCalculus(p,g,h),p);
+//////////////////////////////TV//////////////////////////////
   
