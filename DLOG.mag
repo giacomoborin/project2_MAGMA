@@ -123,9 +123,9 @@ function IndexCalculus(p,g,h)
     MatrixOfexponentCopied:=Matrix( GF(prime), #B+1, #B, SeqMatrixOfexponent );
     VectorOfexponentCopied:=[GF(prime)!VectorOfexponent[j]: j in [1..#B+1]];
     LogFactorsOfp_1:=Solution( Transpose(MatrixOfexponentCopied), Vector(VectorOfexponentCopied));
-    Solutions:=Append(Solutions, LogFactorsOfp_1);
-    VectorOfexponent;
-    LogFactorsOfp_1;
+    //Solutions:=Append(Solutions, LogFactorsOfp_1);
+    //VectorOfexponent;
+    //LogFactorsOfp_1;
   end for;
 
   //////This sequence will hold the log(g,B[i]) mod p-1a//////
