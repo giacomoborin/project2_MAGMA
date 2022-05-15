@@ -17,7 +17,7 @@ function Factorization_Lehman(n)
 		QR[((i^2) mod qr_mod) + 1]:= true;
 	end for;
 	
-	r := Ceiling(n^(1/3));
+	r := Ceiling(n^(1/2));
 
   	C := [ 	<1,0,[30]>,
 		<4,-24,[48,24,24,24]>,
