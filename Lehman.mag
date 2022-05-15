@@ -90,14 +90,16 @@ function Factorization_Lehman(N)
 			// PERCHÈ TOGLIENDO STE RIGHE FUNZIONA ??????
 			// ******************************************
 			
-			// questo serve per avere x = k+n mod 4
+			// questo serve per avere x = k+n mod 4 ma non so
+			// funziona sui loro ma non sempre
+			/*
 			if odd then 
 				while ((k+n) mod 4) ne (x mod 4) do
 					x := x + 1;
 					u := u + 2*x +1;
 				end while;
 			end if;
-			/*
+			*/
 			if odd then 
 				if ((k+n) mod 4) eq (x mod 4) then
 					i1 := i1 + 2;
@@ -105,7 +107,7 @@ function Factorization_Lehman(N)
 					x := x + 2;
 				end if;
 			end if;
-			*/
+			
 			
 
 			for i in [i1..(j+1) by jump] do
