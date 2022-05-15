@@ -93,8 +93,8 @@ function Factorization_Lehman(N)
 			// questo serve per avere x = k+n mod 4
 			if odd then 
 				while ((k+n) mod 4) ne (x mod 4) do
-					x := x - 1;
-					u := u - 2*x +1;
+					x := x + 1;
+					u := u + 2*x +1;
 				end while;
 			end if;
 			/*
