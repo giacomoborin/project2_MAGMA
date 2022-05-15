@@ -125,12 +125,8 @@ procedure test_lehman()
 	pb;
 end procedure;
 
-<<<<<<< Updated upstream
 
 time test_lehman();
 
-=======
-time test_lehman();
->>>>>>> Stashed changes
 
 
