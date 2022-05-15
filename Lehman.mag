@@ -5,6 +5,7 @@
 function isqrt(n)
 	if n eq 0 then
 		j := 1;
+		return 0,0;
 	else 
 		j := Floor(Sqrt(n))+1;
 	end if;
@@ -101,15 +102,17 @@ function Factorization_Lehman(N)
 			end if;
 			*/
 			if odd then 
-				if ((k+n) mod 4) eq (x mod 4) then
+				if ((k+n) mod 4) ne (x mod 4) then
 					i1 := i1 + 2;
 					u := u + 4*(x+1);
 					x := x + 2;
 				end if;
+				if ((k+n - x) mod 4) ne 0 then
+					"PORCA MISERIA";
+				end if;
 			end if;
 			
 			
-
 			for i in [i1..(j+1) by jump] do
 				//x;
 				if QR[(u-1) mod qr_mod + 1] then
@@ -130,7 +133,6 @@ function Factorization_Lehman(N)
 					x := x + 2;
 				end if;
 			end for;
-
 			k := k + c[s];
 			s := (s mod m) + 1;
 		end while;
@@ -139,7 +141,7 @@ function Factorization_Lehman(N)
 end function;
 
 
-Factorization_Lehman(33431);
+//Factorization_Lehman(33431);
 
 TestLehman:=[ car<IntegerRing(), IntegerRing(), IntegerRing()> | <2019211151107, 1030429, 1959583>, <1670209703369, 893939, 
 1868371>, <1342752363619, 777871, 1726189>, <1311201058501, 771209, 1700189>, <1327620307381, 776117, 1710593>, 
@@ -164,6 +166,7 @@ procedure test_lehman()
 	for test in TestLehman do
 		//test;
 		n := test[1];
+		//n;
 		p := test[2];
 		r := Floor(n^(1/3)) + 1;
 		if not (Sqrt((n/(r+1))) lt p and p le n^(1/2)) then
@@ -178,6 +181,9 @@ procedure test_lehman()
 	end for;
 	pb;
 end procedure;
+
+Factorization_Lehman(23514495349427);
+Factorization_Lehman(5595112429201);
 
 time test_lehman();
 
