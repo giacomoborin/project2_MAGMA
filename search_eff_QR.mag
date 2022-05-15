@@ -3,9 +3,16 @@ function nQR(N)
 end function;
 
 
-Perc := [nQR(n) : n in [1..10000]];
+Perc := [nQR(n) : n in [1..1000]];
 
 Min(Perc);
+
+Perc[729];
+
+Perc := [<n,nQR(n)> : n in [1..1000]];
+
+Perc;
+
 
 
 // result : 9363
