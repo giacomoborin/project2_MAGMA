@@ -3,25 +3,8 @@
 
 // isqrt(n,  u) which  gives as  its  value  the  smallest  positive  integer  j  such  that  j^2 >= n and  gives to  u the  corresponding  value  of  j^2  — n
 function isqrt(n)
-	if n eq 0 then
-		j := 1;
-		return 0,0;
-	else 
-		j := Floor(Sqrt(n))+1;
-	end if;
-	j1 := j^2 - n;
-	while j1 lt 0 do
-		j1 := j1 + 2*j + 1;
-		j := j + 1;
-	end while;
-	j2 := j1 - 2*j + 1;
-	while j2 ge 0 do
-		j1 := j2;
-		j := j - 1;
-		j2 := j1 - 2*j + 1;
-	end while;
-	//j := Ceiling(Sqrt(n));
-	return j,j1;
+	j := Ceiling(Sqrt(n));
+	return j,j^2 -n;
 end function;
 
 
@@ -182,8 +165,6 @@ procedure test_lehman()
 	pb;
 end procedure;
 
-Factorization_Lehman(23514495349427);
-Factorization_Lehman(5595112429201);
 
 time test_lehman();
 
