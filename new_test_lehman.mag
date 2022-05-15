@@ -20,9 +20,9 @@ end function;
 
 
 SetSeed(42);
+SetSeed(421);
 
 TestLehman := [ semiprime() : _ in [1..1000]];
 
-"End";
 
 
