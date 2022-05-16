@@ -87,9 +87,10 @@ function IndexCalculus(p,g,h)
 
   //////Setting the bound//////
   //TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
-  //TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
-  TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+  TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
+  //TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
   B:=PrimesUpTo(TopB);
+  //B;
 
   //////Initialize variables//////
   VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
@@ -103,6 +104,7 @@ function IndexCalculus(p,g,h)
     if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
       //////We add the exponent g^exponent to the vector of exponents//////
       Append(~VectorOfexponent, exponent);
+      //Modexp(g,exponent,p);
       
       //////IntermediatePadding//////
       seq:=IntermediateZeroPadding(B, FactorsOfgtoexponents);
@@ -111,34 +113,51 @@ function IndexCalculus(p,g,h)
     end if;
     exponent+:=1;
   until #VectorOfexponent eq (#B)+1;
-  
+  //VectorOfexponent;
 //###[Modexp(g,VectorOfexponent[i],p) eq &*[Modexp(B[j], SeqMatrixOfexponent[i][j], p): j in [1..#B]]: i in [1..#B+1]];
 
   //////In the next variable, there will be a vectors of different universe//////
   Solutions:=<>;
-	SeqMatrixOfexponent;
-
+	//SeqMatrixOfexponent;
+	AccettablePrimes := [1..#B];
   //////This cycle will find the solution in modulus//////
   for i in [1..2] do //#FactorsOfp_1=2
     prime:=FactorsOfp_1[i][1]; //FactorsOfp_1[i][2]=1
     MatrixOfexponentCopied:=Matrix( GF(prime), #B+1, #B, SeqMatrixOfexponent );
-    MatrixOfexponentCopied;
+    //MatrixOfexponentCopied;
     VectorOfexponentCopied:=[GF(prime)!VectorOfexponent[j]: j in [1..#B+1]];
-    LogFactorsOfp_1,N:=Solution( Transpose(MatrixOfexponentCopied), Vector(VectorOfexponentCopied));
-    Dimension(N);
+        M := Transpose(MatrixOfexponentCopied);
+	"\n\n";
+    LogFactorsOfp_1:=Solution( M, Vector(VectorOfexponentCopied));
+    for i in [1..#B+1] do
+		if IsZero(M[i]) then
+
+			i,M[i];
+			Exclude(~AccettablePrimes,i);
+		else 
+			M[i];
+		end if;
+    end for;
+    //Dimension(N);
     Solutions:=Append(Solutions, LogFactorsOfp_1);
     //VectorOfexponent;
-    LogFactorsOfp_1;
+    //LogFactorsOfp_1;
   end for;
-  Solutions;
+  //Solutions;
+
+  AccettablePrimes;
 
   //////This sequence will hold the log(g,B[i]) mod p-1a//////
   AllTheFinalLogs:=[];
 
-  for i in [1..#B] do
+  for i in AccettablePrimes do
     Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[j][1]: j in [1..2]]);
-    AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
+	AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
   end for;
+
+  //AllTheFinalLogs;
+    B := B[AccettablePrimes];
+
   
  [AllTheFinalLogs[i] eq Log(GF(p)!g, GF(p)!B[i]): i in [1..#B]];
 
@@ -159,17 +178,35 @@ function IndexCalculus(p,g,h)
 end function;
 
 //////////////////////////////TEST Documentation//////////////////////////////
-p:=251;
-g:=37;
+/*
+p:=2*23 + 1;
+g:=5;
 h:=Modexp(g,42,p);
+h;
 h eq Modexp(g,IndexCalculus(p,g,h),p);
 
 
-/*
+p:=2*53 + 1;
+g:=5;
+h:=Modexp(g,42,p);
+h;
+h eq Modexp(g,IndexCalculus(p,g,h),p);
+
+
+
 p:=18443;
 g:=37;
 h:=211;
 h eq Modexp(g,IndexCalculus(p,g,h),p);
 */
 //////////////////////////////TV//////////////////////////////
-  
+ 
+  for test in TestIndexC[[6]] do
+  //test;
+    p:=test[1];
+    g:=test[2];
+    h:=test[3];
+    test,test[4] eq IndexCalculus(p,g,h);
+  end for;
+
+ 
