@@ -140,10 +140,10 @@ function IndexCalculus(p,g,h)
     AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
   end for;
   
-//[AllTheFinalLogs[i] eq Log(GF(p)!g, GF(p)!B[i]): i in [1..#B]];
+ [AllTheFinalLogs[i] eq Log(GF(p)!g, GF(p)!B[i]): i in [1..#B]];
 
   //////we find h*g^(-k) B-smooth -> log(g,h)=k+sum(exponentb*log(g,b) : for b in B)//////
-  k:=0; // ho provato a mettere = 0 invece di = 1
+  k:=1; // ho provato a mettere = 0 invece di = 1
   repeat
     k+:=1;
     attempt:=(h*Modexp(g,-k,p)) mod p;
@@ -163,6 +163,7 @@ p:=251;
 g:=37;
 h:=Modexp(g,42,p);
 h eq Modexp(g,IndexCalculus(p,g,h),p);
+
 
 /*
 p:=18443;
