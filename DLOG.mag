@@ -87,8 +87,8 @@ function IndexCalculus(p,g,h)
 
   //////Setting the bound//////
   //TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
-  TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
-  //TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+  //TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
+  TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
   B:=PrimesUpTo(TopB);
 
   //////Initialize variables//////
@@ -102,12 +102,12 @@ function IndexCalculus(p,g,h)
     //////Checking the B-smoot property//////
     if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
       //////We add the exponent g^exponent to the vector of exponents//////
-      VectorOfexponent:=Append(VectorOfexponent, exponent);
+      Append(~VectorOfexponent, exponent);
       
       //////IntermediatePadding//////
       seq:=IntermediateZeroPadding(B, FactorsOfgtoexponents);
       
-      SeqMatrixOfexponent:=Append(SeqMatrixOfexponent, seq);
+      Append(~SeqMatrixOfexponent, seq);
     end if;
     exponent+:=1;
   until #VectorOfexponent eq (#B)+1;
@@ -116,35 +116,40 @@ function IndexCalculus(p,g,h)
 
   //////In the next variable, there will be a vectors of different universe//////
   Solutions:=<>;
-  
+	SeqMatrixOfexponent;
+
   //////This cycle will find the solution in modulus//////
   for i in [1..2] do //#FactorsOfp_1=2
     prime:=FactorsOfp_1[i][1]; //FactorsOfp_1[i][2]=1
     MatrixOfexponentCopied:=Matrix( GF(prime), #B+1, #B, SeqMatrixOfexponent );
+    MatrixOfexponentCopied;
     VectorOfexponentCopied:=[GF(prime)!VectorOfexponent[j]: j in [1..#B+1]];
-    LogFactorsOfp_1:=Solution( Transpose(MatrixOfexponentCopied), Vector(VectorOfexponentCopied));
-    //Solutions:=Append(Solutions, LogFactorsOfp_1);
+    LogFactorsOfp_1,N:=Solution( Transpose(MatrixOfexponentCopied), Vector(VectorOfexponentCopied));
+    Dimension(N);
+    Solutions:=Append(Solutions, LogFactorsOfp_1);
     //VectorOfexponent;
-    //LogFactorsOfp_1;
+    LogFactorsOfp_1;
   end for;
+  Solutions;
 
   //////This sequence will hold the log(g,B[i]) mod p-1a//////
   AllTheFinalLogs:=[];
 
   for i in [1..#B] do
-    Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[j][1]: j in [1..#FactorsOfp_1]]);
+    Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[j][1]: j in [1..2]]);
     AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
   end for;
   
 //[AllTheFinalLogs[i] eq Log(GF(p)!g, GF(p)!B[i]): i in [1..#B]];
 
   //////we find h*g^(-k) B-smooth -> log(g,h)=k+sum(exponentb*log(g,b) : for b in B)//////
-  k:=1;
+  k:=0; // ho provato a mettere = 0 invece di = 1
   repeat
     k+:=1;
     attempt:=(h*Modexp(g,-k,p)) mod p;
     fact:=Factorization(attempt);
   until [fact[i][1]: i in [1..#fact]] subset B;
+
 
   //////IntermediatePadding//////
   seqfact:=IntermediateZeroPadding(B, fact);
@@ -154,9 +159,16 @@ function IndexCalculus(p,g,h)
 end function;
 
 //////////////////////////////TEST Documentation//////////////////////////////
+p:=251;
+g:=37;
+h:=Modexp(g,42,p);
+h eq Modexp(g,IndexCalculus(p,g,h),p);
+
+/*
 p:=18443;
 g:=37;
 h:=211;
 h eq Modexp(g,IndexCalculus(p,g,h),p);
+*/
 //////////////////////////////TV//////////////////////////////
   
