@@ -11,17 +11,14 @@ function ECDSA_Signing(q,E,G,r,d,m)
              -m is the message to be signed
      OUTPUT: -(R,s) is the digital signature
 */
-	R := d*G;
-	//Choose document d mod q. 
-
-	//Choose random element e mod q.
-	e := Random(0,r);
-	//Compute eG ∈ E(Fp) and then,
-	//s 1 = x(eG) mod q and Publish the signature (s1, s2).
-	//s2 ≡ (d + ss1)e −1 (mod q).
-	s1 := Integers()!(e*G)[1] mod r;
-	s2 := (m + d*s1)*Modinv(e,r) mod r;
-	return R,[s1,s2];
+	
+	// Choose random element e mod r.
+	k := Random(1,r-1);
+	// Compute R = kG ∈ E(Fp) and then,
+	R := k*G;
+	//	
+	s := (m + d*Integers()!(R[1]) )*Modinv(k,r) mod r;
+	return R,s;
 end function;
 
 
@@ -39,10 +36,10 @@ function ECDSA_Verification(q,E,G,r,Q,m,R,s)
      OUTPUT: -bool is a boolean that says if the
               sign is valid
 */
-	i := Modinv(s[2],r);
-	v1 := m*i mod r;
-	v2 := s[1]*i mod r;
-	return (Integers()!((v1*G + v2*R)[1] - s[1]) mod r) eq 0;
+	i := Modinv(s,r);
+	u1 := m*i mod r;
+	u2 := Integers()!(R[1])*i mod r;
+	return (u1*G + u2*Q) eq R;
 end function;
 
 
