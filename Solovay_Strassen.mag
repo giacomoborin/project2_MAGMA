@@ -25,31 +25,31 @@ end function;
 
 
 function JacobySymbol(a,n)
-	S := [a,n,1];
-	while S[1] gt 1 do
+	r := 1;
+	while a gt 1 do
 		/*
 		S := prop32(S);
 		S := prop4(S);
 		S := prop1(S);
 		*/
-		seq := Intseq(S[1],2);
+		seq := Intseq(a,2);
 		v2 := Index(seq,1) - 1;
-		S[1]:=Seqint(seq[(v2+1)..#seq],2);
-		if (v2 mod 2 eq 1) and ((S[2] mod 8) in [3,5]) then
-			S[3]:=S[3]*(-1);
+		a:=Seqint(seq[(v2+1)..#seq],2);
+		if (v2 mod 2 eq 1) and ((n mod 8) in [3,5]) then
+			r:=r*(-1);
 		end if;
 
-		if (S[1] mod 4 eq 3) and (S[2] mod 4 eq 3) then
-			S[3] := S[3]*(-1);
+		if (a mod 4 eq 3) and (n mod 4 eq 3) then
+			r := r*(-1);
 		end if;
-		buff := S[1];
-		S[1] := S[2];
-		S[2] := buff;
+		buff := a;
+		a := n;
+		n := buff;
 
-		S[1] := S[1] mod S[2];	
+		a := a mod n;	
 
 	end while;
-	return S[3];
+	return r;
 end function;
 
 
