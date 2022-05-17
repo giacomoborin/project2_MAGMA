@@ -54,15 +54,6 @@ TestIndexC:=
       [ 93520067, 47677472, 51567693, 71140339 ],
       [ 80711039, 19779831, 3544530, 28307137 ]
   ];
-/*
-  for test in TestIndexC do
-  //test;
-    p:=test[1];
-    g:=test[2];
-    h:=test[3];
-    test[4] eq IndexCalculus(p,g,h);
-  end for;
-*/
 
 function IntermediateZeroPadding(B, factors)
 //////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponen//////
@@ -70,40 +61,46 @@ function IntermediateZeroPadding(B, factors)
   	seq:=[];
   	for prime in B do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
 		if (counter le #factors) and (prime eq factors[counter][1]) then
-			seq:=Append(seq, factors[counter][2]);
+			Append(~seq, factors[counter][2]);
 			counter+:=1;
 		else
-			seq:=Append(seq, 0);
+			Append(~seq, 0);
 		end if;
   	end for;
 	return seq;
 end function;
 
 
-function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,FactorsOfp_1,p,g,h)
+function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q)
 	//////In the next variable, there will be a vectors of different universe//////
-  	Solutions:=<>;
 	//SeqMatrixOfexponent;
 	AccettablePrimes := [1..#B];
   	//////This cycle will find the solution in modulus//////
-  	for i in [1..2] do //#FactorsOfp_1=2
-    		prime:=FactorsOfp_1[i][1]; //FactorsOfp_1[i][2]=1
-    		MatrixOfexponentCopied:=Matrix( GF(prime), #SeqMatrixOfexponent, #B, SeqMatrixOfexponent );
-		VectorOfexponentCopied:=[GF(prime)!v : v in VectorOfexponent];
-		M := Transpose(MatrixOfexponentCopied);
-		LogFactorsOfp_1:=Solution( M, Vector(VectorOfexponentCopied));
-		for i in [1..#B] do
-			if IsZero(M[i]) then
-				Exclude(~AccettablePrimes,i);
-			end if;
-		end for;
-    		Solutions:=Append(Solutions, LogFactorsOfp_1);
-  	end for;
+
+	// solutions for 2
+	prime:=2;
+	M := Transpose(Matrix( GF(prime), #SeqMatrixOfexponent, #B, SeqMatrixOfexponent ));
+	Sol2 := Solution( M, Vector(GF(prime),VectorOfexponent));
+	for i in [1..#B] do
+		if IsZero(M[i]) then
+			Exclude(~AccettablePrimes,i);
+		end if;
+	end for;
+
+	// solutions for q = (p-1)/2
+	prime:=q; 
+	M := Transpose(Matrix( GF(prime), #SeqMatrixOfexponent, #B, SeqMatrixOfexponent ));
+	Solq := Solution( M, Vector(GF(prime),VectorOfexponent));
+	for i in [1..#B] do
+		if IsZero(M[i]) then
+			Exclude(~AccettablePrimes,i);
+		end if;
+	end for;
 	AllTheFinalLogs:=[];
 
 	for i in AccettablePrimes do
-    		Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[j][1]: j in [1..2]]);
-		AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
+    		Chinese:=CRT([Integers()!Sol2[i], Integers()!Solq[i]], [2,q]);
+		Append(~AllTheFinalLogs, Chinese);
   	end for;
 	
 	B := B[AccettablePrimes];
@@ -126,7 +123,7 @@ end function;
 
 //////I primi p sono di Sophie Germain p=2q+1//////
 function IndexCalculus(p,g,h)
-	FactorsOfp_1:=Factorization(p-1);
+  	q := (p-1) div 2;
 
 	//////Setting the bound//////
 
@@ -152,7 +149,7 @@ function IndexCalculus(p,g,h)
 	//bound_rows := #B;
 	new_rows := 0;
 	bound_new_rows := Floor((#B)*(0.10));
-	tentativi := 0;
+	//tentativi := 0;
 	repeat
 		repeat 
 			FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
@@ -170,10 +167,10 @@ function IndexCalculus(p,g,h)
 			exponent:=Random(2,p-2);
 		until (rows gt bound_rows) and (new_rows gt bound_new_rows);
 		new_rows := 0;
-		tentativi +:= 1;
-		sol := SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,FactorsOfp_1,p,g,h);
+		//tentativi +:= 1;
+		sol := SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q);
   	until Modexp(g,sol,p) eq h;
-	tentativi;
+	//tentativi;
 	return sol;
 end function;
 
@@ -229,5 +226,35 @@ h eq Modexp(g,IndexCalculus(p,g,h),p);
   end for;
   err/#TestIndexC;
   
+time for test in TestIndexC do
+  //test;
+    p:=test[1];
+    g:=test[2];
+    h:=test[3];
+    if not test[4] eq IndexCalculus(p,g,h) then
+    	err+:=1;
+    end if;
+  end for;
+  err/#TestIndexC;
+time for test in TestIndexC do
+  //test;
+    p:=test[1];
+    g:=test[2];
+    h:=test[3];
+    if not test[4] eq IndexCalculus(p,g,h) then
+    	err+:=1;
+    end if;
+  end for;
+  err/#TestIndexC;
 
- 
+ time for test in TestIndexC do
+  //test;
+    p:=test[1];
+    g:=test[2];
+    h:=test[3];
+    if not test[4] eq IndexCalculus(p,g,h) then
+    	err+:=1;
+    end if;
+  end for;
+  err/#TestIndexC;
+
