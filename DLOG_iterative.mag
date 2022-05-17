@@ -58,13 +58,11 @@ TestIndexC:=
 function IntermediateZeroPadding(B, factors)
 //////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponen//////
   	counter:=1;
-  	seq:=[];
-  	for prime in B do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
-		if (counter le #factors) and (prime eq factors[counter][1]) then
-			Append(~seq, factors[counter][2]);
+  	seq:=[0 : _ in B];
+  	for i in [1..#B] do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
+		if (counter le #factors) and (B[i] eq factors[counter][1]) then
+			seq[i] := factors[counter][2];
 			counter+:=1;
-		else
-			Append(~seq, 0);
 		end if;
   	end for;
 	return seq;
