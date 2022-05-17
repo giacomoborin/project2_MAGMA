@@ -218,14 +218,17 @@ h eq Modexp(g,IndexCalculus(p,g,h),p);
 */
 //////////////////////////////TV//////////////////////////////
  
-  /*
+  err:=0;
   for test in TestIndexC[[6]] do
   //test;
     p:=test[1];
     g:=test[2];
     h:=test[3];
-    test,test[4] eq IndexCalculus(p,g,h);
+    if not test[4] eq IndexCalculus(p,g,h) then
+    	err+:=1;
+    end if;
   end for;
-  */
+  err/#TestIndexC;
+  
 
  
