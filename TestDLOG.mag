@@ -1,4 +1,4 @@
-//TestIndexC:=
+TestIndexC:=
 [
     [ 51047, 48237, 7421, 7712 ],
     [ 37799, 29997, 14261, 15137 ],
@@ -44,25 +44,16 @@
 
 //////[prime p, primitive element g, element h, exponent s.t. g^exponent=h]//////
 
+load "safeprimes.mag";
+
 TestIndexC:=[];
 
 for i in [1..1000] do //Il TV sarà grande 1000
-	p:=RandomPrime(30);
+	p:=Random(safeprimes);
 	g:=Integers()!PrimitiveElement(GF(p));//In realtà qui abbiamo che 2 è preso spessisimo come elemento primitivo
-	exponent:=Random(p-1);//Sto assumendo che l'esponente sia minore di p-1 altrimenti sarebbe sufficiente utilizzare la Field equation per abbassare il grado
+	exponent:=Random(2,p-2);//Sto assumendo che l'esponente sia minore di p-1 altrimenti sarebbe sufficiente utilizzare la Field equation per abbassare il grado
 	h:=Modexp(g,exponent,p);
 	TestIndexC:=Append(TestIndexC, [p,g,h,exponent]);
 end for;
 
-procedure test_index_calculus()
-	for test in TestIndexC do
-		p:=test[1];
-		F:=GF(p);
-		g:=F!test[2];
-		h:=F!test[3];
-		if not IndexCalculus(p,g,h) eq test[4] then
-			"Error! The problem is for test:\n";
-			test; break;
-		end if;
-	end for;
-end procedure;
+
