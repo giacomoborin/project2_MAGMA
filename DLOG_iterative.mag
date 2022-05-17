@@ -134,10 +134,10 @@ function IndexCalculus(p,g,h)
 	//TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
 
 	// choice 2 : 0.030 sec
-	TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
+	//TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
 
 	// choice 3 : 0.030 sec
-	//TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+	TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
 
 	B:=PrimesUpTo(TopB);
 
@@ -148,9 +148,11 @@ function IndexCalculus(p,g,h)
 	//////Looking for g^exponent s.t. it is B-smooth and setting variables//////
 	exponent:=Random(2,p-2);
 	rows := 0;
-	bound_rows := Floor((#B)*(0.80));
+	bound_rows := Floor((#B)*(0.70));
+	//bound_rows := #B;
 	new_rows := 0;
 	bound_new_rows := Floor((#B)*(0.10));
+	tentativi := 0;
 	repeat
 		repeat 
 			FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
@@ -168,8 +170,10 @@ function IndexCalculus(p,g,h)
 			exponent:=Random(2,p-2);
 		until (rows gt bound_rows) and (new_rows gt bound_new_rows);
 		new_rows := 0;
-	sol := SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,FactorsOfp_1,p,g,h);
+		tentativi +:= 1;
+		sol := SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,FactorsOfp_1,p,g,h);
   	until Modexp(g,sol,p) eq h;
+	tentativi;
 	return sol;
 end function;
 
@@ -188,12 +192,13 @@ end if;
 end for;
 err;
 */
+/*
 p:=2*251 + 1;
 g:=5;
 exp := 501;
 h:=Modexp(g,exp,p);
 h eq Modexp(g,IndexCalculus(p,g,h),p);
-
+*/
 
 /*
 
@@ -213,7 +218,7 @@ h eq Modexp(g,IndexCalculus(p,g,h),p);
 //////////////////////////////TV//////////////////////////////
  
   err:=0;
-  for test in TestIndexC[[6]] do
+  for test in TestIndexC do
   //test;
     p:=test[1];
     g:=test[2];
