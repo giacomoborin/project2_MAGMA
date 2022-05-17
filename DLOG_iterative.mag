@@ -121,7 +121,16 @@ function IndexCalculus(p,g,h)
 	//////Looking for g^exponent s.t. it is B-smooth and setting variables//////
 	exponent:=Random(2,p-2);
 	rows := 0;
-	bound_rows := Floor((#B)*(0.70));
+	/*
+	some choices for this percentage:
+	- 0.75 -> 8.510
+	- 0.70 -> 8.750
+	- 0.80 -> 8.530
+	- 0.90 -> 7.880
+	- 0.95 -> 7.670/7.890
+	- #B +1 -> 8.390
+	*/
+	bound_rows := ((#B)+1);
 	//bound_rows := #B;
 	new_rows := 0;
 	bound_new_rows := Floor((#B)*(0.10));

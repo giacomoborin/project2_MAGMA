@@ -48,6 +48,8 @@ load "safeprimes.mag";
 
 TestIndexC:=[];
 
+SetSeed(42);
+
 for i in [1..1000] do //Il TV sarà grande 1000
 	p:=Random(safeprimes);
 	g:=Integers()!PrimitiveElement(GF(p));//In realtà qui abbiamo che 2 è preso spessisimo come elemento primitivo
