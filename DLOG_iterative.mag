@@ -136,7 +136,7 @@ function IndexCalculus(p,g,h)
 	// choice 2 : 0.030 sec
 	//TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
 
-	// choice 3 : 0.030 sec
+	// choice 3 : 0.030 sec || the fastest in the new implementation!!
 	TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
 
 	B:=PrimesUpTo(TopB);
