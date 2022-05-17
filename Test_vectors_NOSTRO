@@ -1,0 +1,12 @@
+
+maxnumber:=2000000;
+TestSolovay:=[Random(maxnumber): _ in [1..3000]];
+
+//primes from "a" to "b"
+a:=50000;
+b:=100000;
+SeqPrimes:=Setseq(Seqset(PrimesUpTo(b)) meet Seqset([i: i in [a..b]])
+TestLehman:=[car<IntegerRing(), IntegerRing(), IntegerRing()> | 
+		[SeqPrimes[Random(#SeqPrimes)]*SeqPrimes[Random(#SeqPrimes)]]: 
+		_ in [1..1000]
+	     ]
