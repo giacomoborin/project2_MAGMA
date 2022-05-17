@@ -70,6 +70,27 @@ function IntermediateZeroPadding(B, factors)
 	return seq;
 end function;
 
+// return v,m such that n = p^v*m and p does not divide m
+function p_adic_val(p,n)
+	v := 0;
+	m := n;
+	while m mod p eq 0 do
+		v +:= 1;
+		m div:= p;
+	end while;
+	return v,m;
+end function;
+
+// given an element el and a factor bases return true and its zero padding if its b-smooth
+function Bsmoothing(B, el)
+	ZeroPad := B;
+	for i in [1..#B] do
+		v,el := p_adic_val(B[i],el);
+		ZeroPad[i]:= v;
+	end for;
+	return (el eq 1),ZeroPad;
+end function;
+
 
 function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q)
 	//////In the next variable, there will be a vectors of different universe//////
