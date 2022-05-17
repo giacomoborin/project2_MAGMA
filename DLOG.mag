@@ -87,9 +87,10 @@ function IndexCalculus(p,g,h)
 
   //////Setting the bound//////
   //TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
-  //TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
-  TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+  TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
+  //TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
   B:=PrimesUpTo(TopB);
+  //B;
 
   //////Initialize variables//////
   VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
@@ -101,46 +102,67 @@ function IndexCalculus(p,g,h)
     FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
     //////Checking the B-smoot property//////
     if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
+    	[FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] ;
       //////We add the exponent g^exponent to the vector of exponents//////
       Append(~VectorOfexponent, exponent);
+      Modexp(g,exponent,p);
       
       //////IntermediatePadding//////
       seq:=IntermediateZeroPadding(B, FactorsOfgtoexponents);
+      seq;
       
       Append(~SeqMatrixOfexponent, seq);
     end if;
     exponent+:=1;
   until #VectorOfexponent eq (#B)+1;
-  
+  VectorOfexponent;
+  [Modexp(g,exponent,p) : exponent in VectorOfexponent];
 //###[Modexp(g,VectorOfexponent[i],p) eq &*[Modexp(B[j], SeqMatrixOfexponent[i][j], p): j in [1..#B]]: i in [1..#B+1]];
 
   //////In the next variable, there will be a vectors of different universe//////
   Solutions:=<>;
-	SeqMatrixOfexponent;
-
+	//SeqMatrixOfexponent;
+	AccettablePrimes := [1..#B];
   //////This cycle will find the solution in modulus//////
   for i in [1..2] do //#FactorsOfp_1=2
     prime:=FactorsOfp_1[i][1]; //FactorsOfp_1[i][2]=1
     MatrixOfexponentCopied:=Matrix( GF(prime), #B+1, #B, SeqMatrixOfexponent );
     MatrixOfexponentCopied;
     VectorOfexponentCopied:=[GF(prime)!VectorOfexponent[j]: j in [1..#B+1]];
-    LogFactorsOfp_1,N:=Solution( Transpose(MatrixOfexponentCopied), Vector(VectorOfexponentCopied));
-    Dimension(N);
-    LogFactorsOfp_1:=Solution( Transpose(MatrixOfexponentCopied), Vector(VectorOfexponentCopied));
+
+        M := Transpose(MatrixOfexponentCopied);
+	"\n";
+    LogFactorsOfp_1:=Solution( M, Vector(VectorOfexponentCopied));
+    for i in [1..#B] do
+		if IsZero(M[i]) then
+			Exclude(~AccettablePrimes,i);
+		else 
+		end if;
+    end for;
+    //Dimension(N);
+
     Solutions:=Append(Solutions, LogFactorsOfp_1);
     //VectorOfexponent;
     LogFactorsOfp_1;
+    	"\n";
+
   end for;
-  Solutions;
+  //Solutions;
+
+  AccettablePrimes;
 
   //////This sequence will hold the log(g,B[i]) mod p-1a//////
   AllTheFinalLogs:=[];
 
-  for i in [1..#B] do
+  for i in AccettablePrimes do
     Chinese:=CRT([Integers()!Solutions[j][i]: j in [1..#Solutions]], [FactorsOfp_1[j][1]: j in [1..2]]);
-    AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
+	AllTheFinalLogs:=Append(AllTheFinalLogs, Chinese);
   end for;
-  
+  AllTheFinalLogs;
+
+    B := B[AccettablePrimes];
+
+ [Log(GF(p)!g, GF(p)!B[i]): i in [1..#B]]; 
  [AllTheFinalLogs[i] eq Log(GF(p)!g, GF(p)!B[i]): i in [1..#B]];
 
   //////we find h*g^(-k) B-smooth -> log(g,h)=k+sum(exponentb*log(g,b) : for b in B)//////
@@ -160,6 +182,26 @@ function IndexCalculus(p,g,h)
 end function;
 
 //////////////////////////////TEST Documentation//////////////////////////////
+
+
+
+/*
+p:=2*251 + 1;
+g:=5;
+for exp in [2..p-2] do
+h:=Modexp(g,exp,p);
+err := [];
+if not h eq Modexp(g,IndexCalculus(p,g,h),p) then 
+	Append(~err,exp);	
+end if;
+end for;
+err;
+*/
+p:=2*251 + 1;
+g:=5;
+exp := 501;
+h:=Modexp(g,exp,p);
+
 p:=2*53+1;
 g:=5;
 h:=Modexp(g,42,p);
@@ -167,12 +209,22 @@ h eq Modexp(g,IndexCalculus(p,g,h),p);
 
 
 /*
+
+p:=2*53 + 1;
+g:=5;
+h:=Modexp(g,42,p);
+h;
+h eq Modexp(g,IndexCalculus(p,g,h),p);
+
+
+
 p:=18443;
 g:=37;
 h:=211;
 h eq Modexp(g,IndexCalculus(p,g,h),p);
 */
 //////////////////////////////TV//////////////////////////////
+
   err :=0;
   for test in TestIndexC do
   //test;
@@ -180,8 +232,8 @@ h eq Modexp(g,IndexCalculus(p,g,h),p);
     g:=test[2];
     h:=test[3];
     if not test[4] eq IndexCalculus(p,g,h) then
-	err+:=1;
+    	err+:=1;
     end if;
   end for;
   err/#TestIndexC;
-
+  
