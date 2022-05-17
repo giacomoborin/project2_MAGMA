@@ -218,7 +218,7 @@ h eq Modexp(g,IndexCalculus(p,g,h),p);
 //////////////////////////////TV//////////////////////////////
  
   err:=0;
-  for test in TestIndexC do
+  time for test in TestIndexC do
   //test;
     p:=test[1];
     g:=test[2];
