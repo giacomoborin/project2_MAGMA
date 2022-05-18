@@ -76,11 +76,13 @@ function IndexCalculus(p,g,h)
 	some choices for this percentage:
 	- <0.94, 0.47> time 7.8 sec
 	- <0.90, 0.07> time 7.5 sec
+	- <0.96, 0.22> time 7.55 sec
+	- <0,81, 0,32> time 9. sec
 	*/
-	bound_rows := Floor((#B)*(0.90));
+	bound_rows := Floor((#B)*(0.96));
 	//bound_rows := #B;
 	new_rows := 0;
-	bound_new_rows := Floor((#B)*(0.07));
+	bound_new_rows := Floor((#B)*(0.22));
 	//tentativi := 0;
 	repeat
 		repeat 
