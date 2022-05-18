@@ -1,0 +1,68 @@
+//TestPH:=[*< <q, A,B, P (in tre coordinate), orderofP, Q>, <d st Q=d*P> >*];
+
+function test_generator()
+
+	a:=673271;//estremo inferiore
+	b:=800000000000;//estremo superiore
+	q:=NextPrime(Random(a,b));
+
+	//scelta dei parametri. empiricamente si vede che nella fattorizzazione ci sono pochi fattori (4 o 5) di cui un paio piccoli e uno molto grande. Emuliamo la cosa
+
+	soglia:=q div 100;//Per noi P non è per forza un generatore mentre nei loro test vectors sembra di si, usiamolo anche per scegliere E1,E2
+
+	//scelta dei parametri. empiricamente si vede che nella fattorizzazione ci sono pochi fattori (4 o 5) di cui un paio piccoli e uno molto grande. Emuliamo la cosa
+	A:=NextPrime(Random(soglia-1000,soglia+100000))*Random(1,100);
+
+	B:=NextPrime(Random(soglia-1000,soglia+100000))*Random(1,100);
+
+	E:=EllipticCurve( [GF(q)|A,B]  );
+
+	if (#E lt soglia div 1000) or (#E gt 100000*soglia) then 
+	    return test_generator();
+	end if;
+
+	//seleziona un punto (e quindi r) di grande ordine dato q
+	max_iter:=500;
+	iter:=0;
+	for point in E do//forse questo crea bias
+	    if point eq E!0 then continue; end if;
+	    iter+:=1;
+	    F:=Factorization(Order(point));
+	    if F[#F][1] gt (soglia div 100) then
+		P:=(Order(point) div F[#F][1])*point;
+		r:=F[#F][1];
+		break;
+	    end if;
+	    if iter ge max_iter then 
+		return test_generator();//abortiamo il test. Speriamo non crei loop infiniti
+	    end if;
+	end for;
+
+	//key generation
+	d:=Random((soglia div 1000),r-1);
+	Q:=d*P;
+
+	//cast
+	P:=[Integers()|P[1],P[2],P[3]];
+	Q:=[Integers()|Q[1],Q[2],Q[3]];
+	return <<q,A,B,P,r,Q>,<d>>;
+end function;
+
+TestPH:=[test_generator(): _ in [1..500]];
+
+procedure test_pohlig_hellman()
+	for i in [1..#TestPH] do 
+		q:= TestPH[i][1][1];
+		A:= GF(q)!TestPH[i][1][2];
+		B:= GF(q)!TestPH[i][1][3];
+		E:=EllipticCurve([A,B]);
+		P:= E!TestPH[i][1][4];
+		r:=TestPH[i][1][5];
+		Q:=E!TestPH[i][1][6];
+		d:= ECDLP_PohligHellman(q,E,P,r,Q);
+		if d ne TestPH[i][2][1] then
+			"Error! The problem is for test:\n";
+			TestPH[i]; i; break;
+		end if;
+	end for;
+end procedure;
