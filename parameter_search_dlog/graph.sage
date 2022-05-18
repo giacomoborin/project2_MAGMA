@@ -1,4 +1,4 @@
-out = [ o for o in out if o[2] < 1]                                              
+out = [ o for o in out if o[2] < 0.85]                                              
 import numpy as np 
 x = [ out[i][0] for i in range(len(out))]                                          
 x = np.array(x)                                                                    

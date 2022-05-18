@@ -11,6 +11,7 @@
   // Where gx ≡ h mod p.
 
 
+load "TestDLOG.mag";
 
 function IntermediateZeroPadding(B, factors)
 //////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponen//////
@@ -46,7 +47,8 @@ function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q)
 	return CRT([Integers()!Sol2[dim], Integers()!Solq[dim]], [2,q]);
 end function;
 
-
+for bound_grosso in [70..110] do
+for bound_piccolo in [1..50] do
 
 //////I primi p sono di Sophie Germain p=2q+1//////
 function IndexCalculus(p,g,h)
@@ -74,13 +76,20 @@ function IndexCalculus(p,g,h)
 	rows := 0;
 	/*
 	some choices for this percentage:
-	- <0.94, 0.47> time 7.8 sec
-	- <0.90, 0.07> time 7.5 sec
+	- 0.75 -> 8.510
+	- 0.70 -> 8.750
+	- 0.80 -> 8.530
+	- 0.90 -> 7.880
+	- 0.95 -> 7.670/7.890
+	- #B +1 -> 8.390
+
+	from the research one optimal choice can be:
+	- 0.97,0.46
 	*/
-	bound_rows := Floor((#B)*(0.90));
+	bound_rows := Floor((#B)*(0.01)*bound_piccolo);
 	//bound_rows := #B;
 	new_rows := 0;
-	bound_new_rows := Floor((#B)*(0.07));
+	bound_new_rows := Floor((#B)*(0.01)*bound_piccolo);
 	//tentativi := 0;
 	repeat
 		repeat 
@@ -107,17 +116,24 @@ function IndexCalculus(p,g,h)
 end function;
 
 //////////////////////////////TV//////////////////////////////
- 
-load "TestDLOG.mag";
-err:=0;
-time for test in TestIndexC do
+
+
+bound_grosso,bound_piccolo;
+t := Cputime();
+for test in TestIndexC do
 	//test;
 	p:=test[1];
 	g:=test[2];
 	h:=test[3];
 	if not test[4] eq IndexCalculus(p,g,h) then
-		err+:=1;
+		"AOOOOOO",test;
 	end if;
 end for;
-err/#TestIndexC;
+time_dlog := Cputime(t);
+Write("output_2.mag",<0.01*bound_grosso,0.01*bound_piccolo,time_dlog>);
+
+
+
+end for;
+end for;
 
