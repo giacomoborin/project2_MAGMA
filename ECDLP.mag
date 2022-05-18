@@ -16,33 +16,142 @@
 // are points over the elliptic curve E such that Q = d · P. You will find the
 // description of the algorithms in the attached files.
 
+// this function try to find solutions to the equation a = x * b mod n
+function solutions(a,b,n)
+	// here we evaluate the gcd with extended euclidean algorithm
+	// we use mu to evaluate the inverse the solutions of a = x * b mod n
+	d,mu := Xgcd(b,n);
+	// easy case
+	if d eq 1 then 
+		return [a*mu mod n];
+	// other cases suitable for inversion
+	elif a mod d eq 0 then
+		sol_zero := mu * (a div d) mod n;
+		// here we insert all the solutions of the eq
+		return [ sol_zero + i*(n div d) : i in [0..(d-1)]];
+	end if;
+	return [];
+end function;
 
+// I'm sorry but I apprecciate too much nested functions 
+function partition(A,s)
+	return Integers()!A[1] mod s + 1;
+end function;
+
+function fp(STATE,N,M,a,b,s)
+	j := partition(STATE[1],s);
+	STATE[1] := STATE[1] + M[j];
+	STATE[2] := (STATE[2] + a[j]) mod N;
+	STATE[3] := (STATE[3] + b[j]) mod N;
+	return STATE;
+end function;
+
+function PollardRhoEC(p, P, Q, ord)
+/*
+ 	INPUTS:  	-p prime;
+           		-P, Q points on the curve;
+           		-ord is the order of P.
+  	OUTPUTS: 	-n the discrete log of Q in base P.
+*/
+	N := ord;
+	a0 := Random([0..(N-1)]);
+	b0 := Random([0..(N-1)]);
+	// initialization of the state
+	XI := <a0*P + b0*Q, a0, b0>;
+	XII := XI;
+	s := 20;
+
+	
+
+	// generation of the a_i,b_i,M_i's
+	a := [Random([0..(N-1)]) : i in [1..s]];
+	b := [Random([0..(N-1)]) : i in [1..s]];
+	M := [a[i]*P + b[i]*Q : i in [1..s]];
+
+	// pollard update function, at every update it is preserved
+	// STATE[1]¬†= STATE[2]*P + STATE[3]*Q
+
+
+	sols := [];
+	while true do
+		// evaluation of the new state
+		XI := fp(XI,N,M,a,b,s);
+		XII := fp(fp(XII,N,M,a,b,s),N,M,a,b,s);
+		// comparison of states 
+		// observe that it is more compact than previous implementation
+		if XI[1][3] eq 0 then
+			sols := solutions(XI[2],XI[3],N);
+		elif XII[1][3] eq 0 then
+			sols := solutions(XII[2],XII[3],N);
+		elif XI[1] eq XII[1] then
+			sols := solutions(XI[2] - XII[2],XII[3] - XII[3],N);
+		end if;
+		// see if sols contains solutions
+		// il sols is empty this passage is skipped
+		for sol in sols do
+			if sol * P eq Q then 
+				return sol;
+			end if;
+		end for;
+	end while;
+end function;
+
+
+bound_ecdlp := 10000;
 ///////////////////////////////////FUNCTION///////////////////////////////////
 function ECDLP_PohlingHellman(q, E, P, r, Q)
 	FactorsOfr:=Factorization(r);
-	KSET:=[];
+	KSET:=[1..#FactorsOfr];
 
 	for i in [1..#FactorsOfr] do
 	  
 		prime:=FactorsOfr[i][1];
 		e:=FactorsOfr[i][2];
-		    
-		coeff:=Integers()!(r div prime); //Remark: r is divisible by prime
+		coeff:=(r div prime); //Remark: r is divisible by prime
 		coeffP:=coeff*P;
-		ImageOfT:=[<i*coeffP,i> : i in [0..prime-1]];
-		T:=map< [ImageOfT[i][1]: i in [1..prime]] -> [0..prime-1]  | ImageOfT>; //This is the nearest thing to a dictionary in Magma
+		K:=[0 : _ in [1..e]]; //this will be the sequence that contains all the k_(i-1)
+		Qs:=[Q : _ in [1..e]]; //this will be the sequence that contains all the Q_(i-1)
 
-		K:=[]; //this will be the sequence that contains all the k_(i-1)
-		Qs:=[Q]; //this will be the sequence that contains all the Q_(i-1)
 
-		K:=Append(K, T(coeff*Qs[1])); //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
+		if prime lt bound_ecdlp then  
+			if e gt 1 then
+				//T := [ i*coeffP : i in [0..prime-1]];
+				
+				T := [ Zero(E) : i in [1..prime]];
+				for j in [2..prime] do
+					T[j] := coeffP + T[j-1];
+				end for;
+				
 
-		for i in [2..e] do
-			Qs:=Append(Qs, Qs[i-1]-(K[i-1]* ((prime^(i-2))*P) ));
-			K:=Append(K, T(Integers()!(coeff/(prime^(i-1)))*Qs[i])); //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
-		end for;
+				K[1] := Position(T,coeff*Qs[1]) - 1; //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
 
-		KSET:=Append(KSET, &+[K[i]*(prime^(i-1)) : i in [1..e]] mod (prime^e)); 
+				for j in [2..e] do
+					Qs[j]:= Qs[j-1]-(K[j-1]* ((prime^(j-2))*P) );
+					K[j]:= Position(T,(coeff div (prime^(j-1)))*Qs[j]) - 1; //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
+				end for;
+			else
+				k := 0;
+				Point := Zero(E);
+				Qs := coeff*Q;
+				while Point ne Qs do
+					Point +:= coeffP;
+					k +:= 1;
+				end while;
+				K := [k];
+			end if;
+		else 
+			
+			K[1] := PollardRhoEC(q, coeffP ,coeff*Qs[1], prime); //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
+
+			for j in [2..e] do
+				Qs[j]:= Qs[j-1]-(K[j-1]* ((prime^(j-2))*P) );
+				K[j]:= PollardRhoEC(coeffP,(coeff div (prime^(j-1)))*Qs[j]) ; //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
+			end for;
+
+		end if;
+
+
+		KSET[i] :=&+[K[j]*(prime^(j-1)) : j in [1..e]] mod (prime^e); 
 	end for;
 
 	return CRT(KSET, [FactorsOfr[i][1]^FactorsOfr[i][2] : i in [1..#FactorsOfr]]);
