@@ -18,7 +18,6 @@
 
 
 
-bound_ecdlp := 10000;
 ///////////////////////////////////FUNCTION///////////////////////////////////
 function ECDLP_PohlingHellman(q, E, P, r, Q)
 	FactorsOfr:=Factorization(r);
@@ -102,7 +101,7 @@ time for test in TestPH do
 	r:=test[1][5];
 	Q:=E!test[1][6];
 	if not ECDLP_PohlingHellman(q, E, P, r, Q) eq test[2][1] then
-		"AOOSOSOA",test;
+		"Error at test :",test;
 	end if;
 end for;
 
