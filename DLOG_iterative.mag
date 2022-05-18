@@ -129,11 +129,14 @@ function IndexCalculus(p,g,h)
 	- 0.90 -> 7.880
 	- 0.95 -> 7.670/7.890
 	- #B +1 -> 8.390
+
+	from the research one optimal choice can be:
+	- 0.97,0.46
 	*/
-	bound_rows := ((#B)+1);
+	bound_rows := Floor((#B)*(0.97));
 	//bound_rows := #B;
 	new_rows := 0;
-	bound_new_rows := Floor((#B)*(0.10));
+	bound_new_rows := Floor((#B)*(0.46));
 	//tentativi := 0;
 	repeat
 		repeat 
