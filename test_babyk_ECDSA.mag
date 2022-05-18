@@ -14,20 +14,20 @@ load "ECDSA.mag";//NB: potebbe essere necessario cambiare qualcosa qui
 */
 
 //SCELTA DELLE VERSIONI DELLA FIRMA (aggiungi eventuale descrizione)
-Sign1:=ECDSA_Signing1; Sdescr1:="prima versione di firma";
-Sign2:=ECDSA_Signing1; Sdescr2:="seconda versione di firma";
+Sign1:=ECDSA_Signing; Sdescr1:="prima versione di firma";
+Sign2:=ECDSA_Signing; Sdescr2:="seconda versione di firma"; //controlla se riga 17 e 18 sono "uguali"
 
 
 
 //SCELTA DELLE VERSIONI DELLA VERIFICA
-Veri1:=ECDSA_Verification3; Vdescr1:="prima versione di verifica";
-Veri2:=ECDSA_Verification2; Vdescr2:="seconda versione di verifica";
-
+Veri1:=ECDSA_Verification; Vdescr1:="prima versione di verifica";
+Veri2:=ECDSA_Verification; Vdescr2:="seconda versione di verifica";
+ 
 
 
 //PARAMETRI DEL TEST
-len_test:= 100; //numero di test (q, EC, P.. scelti ogni volta diversi)
-len_M:=200; //numero di messaggi per curva
+len_test:= 2000; //numero di test (q, EC, P.. scelti ogni volta diversi)
+len_M:=20; //numero di messaggi per curva
 
 
 function test_generator(len_M)
@@ -46,7 +46,7 @@ function test_generator(len_M)
 	E1:=NextPrime(E1)*Random(1,100);
 
 	E2:=Random(soglia-1000,soglia+100000);
-	E2:=NextPrime(E1)*Random(1,100);
+	E2:=NextPrime(E2)*Random(1,100);
 
 	E:=EllipticCurve( [GF(q)|E1,E2]  );
 
