@@ -1,0 +1,21 @@
+function nQR(N)                       
+	return RealField(4)!(#{(i^2) mod N : i in [1..N]}/N);
+end function;
+
+
+Perc := [nQR(n) : n in [1..1000]];
+
+Min(Perc);
+
+Perc[729];
+
+Perc := [<n,nQR(n)> : n in [1..1000]];
+
+Perc;
+
+
+
+// result : 9363
+
+
+

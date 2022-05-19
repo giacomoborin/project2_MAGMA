@@ -1,0 +1,179 @@
+  // Write a function called IndexCalculus(p,g,h) to compute the discrete logarithm 
+  // of an element h ∈ Fp* = ⟨g⟩ with the following specifications:
+  // 
+  // NAME: IndexCalculus(p,g,h)
+  // 
+  // INPUTS: -p prime;
+  //         -g primitive root modulo p;
+  //         -h element of Fp*.
+  // 
+  // OUTPUTS: -x integer.
+  // Where gx ≡ h mod p.
+
+
+
+function IntermediateZeroPadding(B, factors)
+//////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponen//////
+  	counter:=1;
+  	seq:=[0 : _ in B];
+  	for i in [1..#B] do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
+		if (counter le #factors) and (B[i] eq factors[counter][1]) then
+			seq[i] := factors[counter][2];
+			counter+:=1;
+		end if;
+  	end for;
+	return seq;
+end function;
+
+// return v,m such that n = p^v*m and p does not divide m
+function p_adic_val(p,n)
+	v := 0;
+	m := n;
+	while m mod p eq 0 do
+		v +:= 1;
+		m div:= p;
+	end while;
+	return v,m;
+end function;
+
+// given an element el and a factor bases return true and its zero padding if its b-smooth
+function Bsmoothing(B, el)
+	ZeroPad := B;
+	for i in [1..#B] do
+		v,el := p_adic_val(B[i],el);
+		ZeroPad[i]:= v;
+	end for;
+	return (el eq 1),ZeroPad;
+end function;
+
+
+function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q)
+	//////In the next variable, there will be a vectors of different universe//////
+	//SeqMatrixOfexponent;
+	AccettablePrimes := [1..#B];
+  	//////This cycle will find the solution in modulus//////
+
+	// solutions for 2
+	prime:=2;
+	M := Transpose(Matrix( GF(prime), #SeqMatrixOfexponent, #B, SeqMatrixOfexponent ));
+	Sol2 := Solution( M, Vector(GF(prime),VectorOfexponent));
+	for i in [1..#B] do
+		if IsZero(M[i]) then
+			Exclude(~AccettablePrimes,i);
+		end if;
+	end for;
+
+	// solutions for q = (p-1)/2
+	prime:=q; 
+	M := Transpose(Matrix( GF(prime), #SeqMatrixOfexponent, #B, SeqMatrixOfexponent ));
+	Solq := Solution( M, Vector(GF(prime),VectorOfexponent));
+	for i in [1..#B] do
+		if IsZero(M[i]) then
+			Exclude(~AccettablePrimes,i);
+		end if;
+	end for;
+	AllTheFinalLogs:=[];
+
+	for i in AccettablePrimes do
+    		Chinese:=CRT([Integers()!Sol2[i], Integers()!Solq[i]], [2,q]);
+		Append(~AllTheFinalLogs, Chinese);
+  	end for;
+	
+	B := B[AccettablePrimes];
+
+	//////we find h*g^(-k) B-smooth -> log(g,h)=k+sum(exponentb*log(g,b) : for b in B)//////
+	k:=1; // ho provato a mettere = 0 invece di = 1
+	repeat
+		k+:=1;
+		attempt:=(h*Modexp(g,-k,p)) mod p;
+		fact:=Factorization(attempt);
+	until [fact[i][1]: i in [1..#fact]] subset B;
+
+	//////IntermediatePadding//////
+	seqfact:=IntermediateZeroPadding(B, fact);
+	  
+	return (k+ (&+[seqfact[i]*AllTheFinalLogs[i]: i in [1..#AllTheFinalLogs]]) ) mod (p-1);
+end function;
+
+
+
+//////I primi p sono di Sophie Germain p=2q+1//////
+function IndexCalculus(p,g,h)
+  	q := (p-1) div 2;
+
+	//////Setting the bound//////
+
+	// choice 1 : slowest for now
+	//TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
+
+	// choice 2 : 0.030 sec
+	//TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
+
+	// choice 3 : 0.030 sec || the fastest in the new implementation!!
+	TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+
+	B:=PrimesUpTo(TopB);
+
+	//////Initialize variables//////
+	VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
+	SeqMatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
+
+	//////Looking for g^exponent s.t. it is B-smooth and setting variables//////
+	exponent:=Random(2,p-2);
+	rows := 0;
+	/*
+	some choices for this percentage:
+	- 0.75 -> 8.510
+	- 0.70 -> 8.750
+	- 0.80 -> 8.530
+	- 0.90 -> 7.880
+	- 0.95 -> 7.670/7.890
+	- #B +1 -> 8.390
+
+	from the research one optimal choice can be:
+	- 0.97,0.46
+	*/
+	bound_rows := Floor((#B)*(0.97));
+	//bound_rows := #B;
+	new_rows := 0;
+	bound_new_rows := Floor((#B)*(0.46));
+	//tentativi := 0;
+	repeat
+		repeat 
+			FactorsOfgtoexponents:=Factorization(Modexp(g,exponent,p));
+			//////Checking the B-smoot property//////
+			if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
+	      //////We add the exponent g^exponent to the vector of exponents//////
+				Append(~VectorOfexponent, exponent);
+	      
+				//////IntermediatePadding//////
+				seq:=IntermediateZeroPadding(B, FactorsOfgtoexponents);
+				Append(~SeqMatrixOfexponent, seq);
+				rows+:=1;
+				new_rows+:=1;
+			end if;
+			exponent:=Random(2,p-2);
+		until (rows gt bound_rows) and (new_rows gt bound_new_rows);
+		new_rows := 0;
+		//tentativi +:= 1;
+		sol := SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q);
+  	until Modexp(g,sol,p) eq h;
+	//tentativi;
+	return sol;
+end function;
+
+//////////////////////////////TV//////////////////////////////
+ 
+load "TestDLOG.mag";
+err:=0;
+time for test in TestIndexC do
+	//test;
+	p:=test[1];
+	g:=test[2];
+	h:=test[3];
+	if not test[4] eq IndexCalculus(p,g,h) then
+		err+:=1;
+	end if;
+end for;
+err/#TestIndexC;
+

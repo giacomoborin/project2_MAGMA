@@ -17,32 +17,50 @@
 // description of the algorithms in the attached files.
 
 
+
 ///////////////////////////////////FUNCTION///////////////////////////////////
 function ECDLP_PohlingHellman(q, E, P, r, Q)
 	FactorsOfr:=Factorization(r);
-	KSET:=[];
+	KSET:=[1..#FactorsOfr];
 
 	for i in [1..#FactorsOfr] do
 	  
 		prime:=FactorsOfr[i][1];
 		e:=FactorsOfr[i][2];
-		    
-		coeff:=Integers()!(r div prime); //Remark: r is divisible by prime
+		coeff:=(r div prime); //Remark: r is divisible by prime
 		coeffP:=coeff*P;
-		ImageOfT:=[<i*coeffP,i> : i in [0..prime-1]];
-		T:=map< [ImageOfT[i][1]: i in [1..prime]] -> [0..prime-1]  | ImageOfT>; //This is the nearest thing to a dictionary in Magma
+		K:=[0 : _ in [1..e]]; //this will be the sequence that contains all the k_(i-1)
+		Qs:=[Q : _ in [1..e]]; //this will be the sequence that contains all the Q_(i-1)
 
-		K:=[]; //this will be the sequence that contains all the k_(i-1)
-		Qs:=[Q]; //this will be the sequence that contains all the Q_(i-1)
 
-		K:=Append(K, T(coeff*Qs[1])); //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
+		if e gt 1 then
+			//T := [ i*coeffP : i in [0..prime-1]];
+			
+			T := [ Zero(E) : i in [1..prime]];
+			for j in [2..prime] do
+				T[j] := coeffP + T[j-1];
+			end for;
+			
 
-		for i in [2..e] do
-			Qs:=Append(Qs, Qs[i-1]-(K[i-1]* ((prime^(i-2))*P) ));
-			K:=Append(K, T(Integers()!(coeff/(prime^(i-1)))*Qs[i])); //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
-		end for;
+			K[1] := Position(T,coeff*Qs[1]) - 1; //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
 
-		KSET:=Append(KSET, &+[K[i]*(prime^(i-1)) : i in [1..e]] mod (prime^e)); 
+			for j in [2..e] do
+				Qs[j]:= Qs[j-1]-(K[j-1]* ((prime^(j-2))*P) );
+				K[j]:= Position(T,(coeff div (prime^(j-1)))*Qs[j]) - 1; //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
+			end for;
+		else
+			k := 0;
+			Point := Zero(E);
+			Qs := coeff*Q;
+			while Point ne Qs do
+				Point +:= coeffP;
+				k +:= 1;
+			end while;
+			K := [k];
+		end if;
+		
+
+		KSET[i] :=&+[K[j]*(prime^(j-1)) : j in [1..e]] mod (prime^e); 
 	end for;
 
 	return CRT(KSET, [FactorsOfr[i][1]^FactorsOfr[i][2] : i in [1..#FactorsOfr]]);
@@ -83,7 +101,10 @@ time for test in TestPH do
 	r:=test[1][5];
 	Q:=E!test[1][6];
 	if not ECDLP_PohlingHellman(q, E, P, r, Q) eq test[2][1] then
-		"AOOSOSOA",test;
+		"Error at test :",test;
+	else 
+		"ok";
 	end if;
 end for;
+
 
