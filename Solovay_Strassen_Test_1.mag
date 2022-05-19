@@ -1,4 +1,0 @@
-
-maxnumber:=2000000;
-TestSolovay:=[Random(maxnumber): _ in [1..3000]];
-
