@@ -1,4 +1,8 @@
 
+
+load "new_test_lehman.mag";
+
+
 function isqrt(n)
 	j := Ceiling(Sqrt(n));
 	return j,j^2 -n;
@@ -6,13 +10,15 @@ end function;
 
 
 // quadratic residue modulo qr_mod
-//qr_mod := 279; // time 13.619 sec
-qr_mod := 385; // time 12.800 sec
+qr_mod := 279; // time 13.619 sec
 //qr_mod := 720; // time 14.210 sec
 //qr_mod := 200;
 //qr_mod := 729; // time 14.670 sec
 // Qui ho fatto una prova per vedere se ci sono mod migliori
 //qr_mod := 9363;
+
+
+for qr_mod in [2..1000] do
 QR := [false : _ in [1..qr_mod]];
 for i in [1..qr_mod] do
 	QR[(i^2 - 1) mod qr_mod + 1]:= true;
@@ -102,7 +108,6 @@ end function;
 
 
 
-load "new_test_lehman.mag";
 
 procedure test_lehman()
 	pb := [car<IntegerRing(), IntegerRing(), IntegerRing()> | ];
@@ -124,7 +129,11 @@ procedure test_lehman()
 end procedure;
 
 
-time test_lehman();
+t := Cputime();
+test_lehman();
+time_qr := Cputime(t);
 
 
+Write("output.mag",<qr_mod,time_qr>);
 
+end for;
