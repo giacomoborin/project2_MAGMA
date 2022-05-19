@@ -102,6 +102,9 @@ time for test in TestPH do
 	Q:=E!test[1][6];
 	if not ECDLP_PohlingHellman(q, E, P, r, Q) eq test[2][1] then
 		"Error at test :",test;
+	else 
+		"ok";
 	end if;
 end for;
+
 

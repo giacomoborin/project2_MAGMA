@@ -24,6 +24,9 @@ function test_generator()
 	//seleziona un punto (e quindi r) di grande ordine dato q
 	max_iter:=500;
 	iter:=0;
+	P := Random(E);
+	r := Order(P);
+	/*
 	for point in E do//forse questo crea bias
 	    if point eq E!0 then continue; end if;
 	    iter+:=1;
@@ -37,6 +40,7 @@ function test_generator()
 		return test_generator();//abortiamo il test. Speriamo non crei loop infiniti
 	    end if;
 	end for;
+	*/
 
 	//key generation
 	d:=Random((soglia div 1000),r-1);
