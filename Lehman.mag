@@ -9,7 +9,8 @@ end function;
 
 
 // quadratic residue modulo qr_mod
-qr_mod := 279; // time 13.619 sec
+//qr_mod := 279; // time 13.619 sec
+qr_mod := 385;
 //qr_mod := 720; // time 14.210 sec
 //qr_mod := 200;
 //qr_mod := 729; // time 14.670 sec
@@ -27,7 +28,7 @@ function Factorization_Lehman(N)
               -q is the largest prime factor of N
 */
 	// Bho proviamo a definire r
-	r := Floor(N^(1/3)) + 1 ;
+	r := Floor(N^(1/4)) + 1 ;
 	// Bho proviamo a dare valore ai c e large
 	C := [ 	<1,0,[30]>,
 		<4,-24,[48,24,24,24]>,
