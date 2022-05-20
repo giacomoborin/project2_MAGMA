@@ -5,28 +5,29 @@ function isqrt(n)
 end function;
 
 
-// quadratic residue modulo qr_mod
+//quadratic residue modulo qr_mod
+//qr_mod := 729; // time 14.670 sec
 //qr_mod := 279; // time 13.619 sec
-qr_mod := 385; // time 12.800 sec
 //qr_mod := 720; // time 14.210 sec
 //qr_mod := 200;
-//qr_mod := 729; // time 14.670 sec
-// Qui ho fatto una prova per vedere se ci sono mod migliori
 //qr_mod := 9363;
+//From empirical trial, we have seen that there are better qr_mod than the one given by the documentation
+
+qr_mod := 385; // time 12.800 sec
 QR := [false : _ in [1..qr_mod]];
 for i in [1..qr_mod] do
 	QR[(i^2 - 1) mod qr_mod + 1]:= true;
 end for;
 
-function Factorization_Lehman(N)
+function Factorization_Lehman(n)
 /*
-     INPUTS:  -N is the semiprime
+     INPUTS:  -n is the semiprime
      OUTPUT:  -p is the smallest prime factor of N
               -q is the largest prime factor of N
 */
-	// Bho proviamo a definire r
-	r := Floor(N^(1/4)) + 1 ;
-	// Bho proviamo a dare valore ai c e large
+	//For a good parameter r the time of the function is much faster
+	r := Floor(n^(1/4)) + 1 ;
+	//There parameters are very good because of the fact that they have lots of disivors
 	C := [ 	<1,0,[30]>,
 		<4,-24,[48,24,24,24]>,
 		<4,-12,[24,24,48,24]>,
@@ -35,7 +36,6 @@ function Factorization_Lehman(N)
 		<2,-2, [4,2]>,
 		<1,-1, [2]>
 	     ];
-	n := N;
 	for array in C do
 		m:= array[1]; m0 := array[2];
 		c := array[3];
@@ -63,13 +63,10 @@ function Factorization_Lehman(N)
 				jump := 2;
 			end if;
 
-			// speed up : compress them
-			if odd then 
-				if ((k+n) mod 4) ne (x mod 4) then
+			if odd and ((k+n) mod 4) ne (x mod 4) then
 					i1 := i1 + 2;
 					u := u + 4*(x+1);
 					x := x + 2;
-				end if;
 			end if;
 			
 			
@@ -84,7 +81,6 @@ function Factorization_Lehman(N)
 					end if;
 				end if;
 				if odd then
-					
 					u := u + 8*(x+2);
 					x := x+ 4;
 				else
@@ -96,12 +92,12 @@ function Factorization_Lehman(N)
 			s := (s mod m) + 1;
 		end while;
 	end for;
-	return 1,N;
+	return 1,n;
 end function;
 
 
 
-
+/*
 load "new_test_lehman.mag";
 
 procedure test_lehman()
@@ -125,6 +121,6 @@ end procedure;
 
 
 time test_lehman();
-
+*/
 
 
