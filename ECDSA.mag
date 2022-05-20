@@ -12,12 +12,11 @@ function ECDSA_Signing(q,E,G,r,d,m)
      OUTPUT: -(R,s) is the digital signature
 */
 	
-	// Choose random element e mod r.
-	k := Random(1,r-1);
-	// Compute R = kG ∈ E(Fp) and then,
+	// k is a secret random parameter
+	k := Random(2,r-1);
 	R := k*G;
-	//	
-	s := (m + d*Integers()!(R[1]) )*Modinv(k,r) mod r;
+	// we need to cast R[1] to see it as an integer
+	s := (m + d*Integers()!(R[1]))*Modinv(k,r) mod r;
 	return R,s;
 end function;
 
