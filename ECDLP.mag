@@ -19,7 +19,7 @@
 
 
 ///////////////////////////////////FUNCTION///////////////////////////////////
-function ECDLP_PohlingHellman(q, E, P, r, Q)
+function ECDLP_PohlngHellman(q, E, P, r, Q)
 	FactorsOfr:=Factorization(r);
 	KSET:=[1..#FactorsOfr];
 
@@ -92,7 +92,7 @@ procedure test_pohlig_hellman()
 		P:= E!TestPH[i][1][4];
 		r:=TestPH[i][1][5];
 		Q:=E!TestPH[i][1][6];
-		d:= ECDLP_PohlingHellman(q,E,P,r,Q);
+		d:= ECDLP_PohlngHellman(q,E,P,r,Q);
 		if d ne TestPH[i][2][1] then
 			"Error! The problem is for test:\n";
 			TestPH[i]; i; break;
