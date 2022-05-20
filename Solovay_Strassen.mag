@@ -25,7 +25,7 @@ function prop4(S)
 end function;
 
 
-function JacobySymbol(a,n)
+function OURJacobiSymbol(a,n)
 	r := 1;
 	while a gt 1 do
 		
