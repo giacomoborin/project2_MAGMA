@@ -13,7 +13,7 @@
 
 
 function IntermediateZeroPadding(B, factors)
-//////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponen//////
+//////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponent//////
   	counter:=1;
   	seq:=[0 : _ in B];
   	for i in [1..#B] do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
