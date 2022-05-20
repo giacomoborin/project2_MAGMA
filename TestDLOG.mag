@@ -52,7 +52,10 @@ SetSeed(42);
 
 for i in [1..1000] do //Il TV sarà grande 1000
 	p:=Random(safeprimes);
-	g:=Integers()!PrimitiveElement(GF(p));//In realtà qui abbiamo che 2 è preso spessisimo come elemento primitivo
+	g:=Integers()!Random(GF(p));
+	while (g eq 0) or (Order(GF(p)!g) ne (p-1)) do
+		g:=Integers()!Random(GF(p));
+	end while;
 	exponent:=Random(2,p-2);//Sto assumendo che l'esponente sia minore di p-1 altrimenti sarebbe sufficiente utilizzare la Field equation per abbassare il grado
 	h:=Modexp(g,exponent,p);
 	TestIndexC:=Append(TestIndexC, [p,g,h,exponent]);
