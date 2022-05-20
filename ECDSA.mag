@@ -21,9 +21,8 @@ function ECDSA_Signing(q,E,G,r,d,m)
 	
 
 	// k is a secret random parameter chosen in Z_r
-  // in particular it lie in [-r/2,r/2] so that we may save one doublig
+  	// in particular it lie in [-r/2,r/2] so that we may save one doublig
 	k := Random(-r div 2,r div 2);
-  // u
 	R := k*G;
 	// we need to cast R[1] to see it as an integer
 	s := (m + d*Integers()!(R[1]))*Modinv(k,r) mod r;
@@ -48,7 +47,7 @@ function ECDSA_Verification(q,E,G,r,Q,m,R,s)
 	i := Modinv(s,r);
 	u1 := mmod(m*i,r);
 	u2 := mmod(Integers()!(R[1])*i,r);
-  // observe that here uning mmod we save 2 doublings 
+  	// observe that here using mmod we save 2 doublings 
 	return (u1*G + u2*Q) eq R;
 end function;
 
