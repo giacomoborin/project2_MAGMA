@@ -48,10 +48,11 @@ end function;
 
 
 
-//////I primi p sono di Sophie Germain p=2q+1//////
+//////Primes p are Sophie Germain p=2q+1//////
 function IndexCalculus(p,g,h)
   	q := (p-1) div 2;
-
+	g:=Integers()!g;
+	h:=Integers()!h;
 	//////Setting the bound//////
 
 	// choice 1 : slowest for now
@@ -108,6 +109,8 @@ function IndexCalculus(p,g,h)
 	return sol;
 end function;
 
+
+/*
 //////////////////////////////TV//////////////////////////////
  
 load "TestDLOG.mag";
@@ -122,4 +125,4 @@ time for test in TestIndexC do
 	end if;
 end for;
 err/#TestIndexC;
-
+*/
