@@ -61,7 +61,6 @@ function SolovayStrassen(n)
 */
 	/*
 	We could add this first and trivial check if we suppose that n could be even too
-	Non so se mettere questo controllo
 	if n mod 2 eq 0 then 
 		return false;
 	end if;
@@ -70,7 +69,7 @@ function SolovayStrassen(n)
 	
 	for i in [1..10] do
 		//Try for a random base a
-		a := Random(1,n-1);
+		a := Random(2,n-1);
 		//There exists a built-in function for JacoobiSymbol that is much faster than whatever we can manually implement
 		x := JacobiSymbol(a, n) mod n;
 		//From the properties of the JacobiSymbol we have that if there exists such a a, we are sure that the number x is composite
@@ -102,11 +101,10 @@ load "new_test_vectors.mag";
 
 S := [ Random(10^5,10^7) : _ in [1..(20*6100)]];
 TestSolovay := [ s : s in S | s mod 2 eq 1];
-#TestSolovay;
 
 procedure test_solovay_strassen()
 	for test in TestSolovay do
-		if not SolovayStrassen(test) eq IsPrime(test) then
+		if SolovayStrassen(test) ne IsPrime(test) then
 			"Error! The problem is for test:\n";
 			test; break;
 		end if;
