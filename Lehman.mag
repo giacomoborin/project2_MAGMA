@@ -32,9 +32,9 @@ for i in [1..qr_mod] do
 	QR[(i^2 - 1) mod qr_mod + 1]:= true;
 end for;
 
-function Factorization_Lehman(n)
+function Factorization_Lehman(N)
 /*
-     INPUTS:  -n is the semiprime
+     INPUTS:  -N is the semiprime
      OUTPUT:  -p is the smallest prime factor of N
               -q is the largest prime factor of N
 */
@@ -118,12 +118,12 @@ function Factorization_Lehman(n)
 			s := (s mod m) + 1;
 		end while;
 	end for;
-	return 1,n;
+	return 1,N;
 end function;
 
 
 
-/*
+
 load "new_test_lehman.mag";
 
 procedure test_lehman()
@@ -147,6 +147,6 @@ end procedure;
 
 
 time test_lehman();
-*/
+
 
 
