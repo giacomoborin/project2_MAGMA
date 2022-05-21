@@ -1,19 +1,30 @@
 
 function isqrt(n)
+/*
+     INPUTS:  -n non negative integer 
+     OUTPUT:  -j smallest integer such that j^2-n > 0
+              -j^2 -n, in particular it is = 0 iff n is a square in Z
+*/
+
 	j := Ceiling(Sqrt(n));
 	return j,j^2 -n;
 end function;
 
 
 // quadratic residue modulo qr_mod
-//qr_mod := 279; // time 13.619 sec
-qr_mod := 3465; // time 
-//qr_mod := 385; // time 12.800 sec
-//qr_mod := 720; // time 14.210 sec
-//qr_mod := 200;
-//qr_mod := 729; // time 14.670 sec
-// Qui ho fatto una prova per vedere se ci sono mod migliori
-//qr_mod := 9363;
+qr_mod := 3465;
+/* here we have several quantities suitable for qr_mod, some of them are
+- 729 (the article one)
+- 385
+- 3465 (the chosen one)
+- 5355
+- 5985
+- 7735
+- 8190
+- 9009
+*/
+// here we use qr_mod to evaluate the quadratic residue modulo qr_mod
+// we have that: "n is quad. res. for qr_mod" iff QR[n]
 QR := [false : _ in [1..qr_mod]];
 for i in [1..qr_mod] do
 	QR[(i^2 - 1) mod qr_mod + 1]:= true;
@@ -25,28 +36,29 @@ function Factorization_Lehman(N)
      OUTPUT:  -p is the smallest prime factor of N
               -q is the largest prime factor of N
 */
-	// Bho proviamo a definire r
+	// here we fix the value for r as n^(1/4)
+	// we have chosen n^(1/4) instead of n^(1/3) for efficency reason 
+	// the theorem still works, infact we know 
+	// p ~ 2^20, n ~ 2^40, r = n^(1/4) ~ 2^10
+	// (n/r+1)^(1/2) ~ 2^15 << 2^20
 	r := Floor(N^(1/4)) + 1 ;
-	// Bho proviamo a dare valore ai c e large
-	C := [ 	<1,0,[30]>,
-		<4,-24,[48,24,24,24]>,
-		<4,-12,[24,24,48,24]>,
-		<4,-18,[36,36,72,36]>,
-		<8,-6, [12,36,24,12,24,12,24,36]>,
-		<2,-2, [4,2]>,
-		<1,-1, [2]>
+	// vectors used for iteration on the values of k \in [1..r]
+	// this is necessary, as explained in the article, to start from values of k with a lot of divisors
+	C := [ 	<1,30,[30]>,
+		<4,24,[24,24,24,48]>,
+		<4,12,[24,48,24,24]>,
+		<4,18,[36,72,36,36]>,
+		<8,6, [36,24,12,24,12,24,36,12]>,
+		<2,2, [2,4]>,
+		<1,1, [2]>
 	     ];
 	for array in C do
-		m:= array[1]; m0 := array[2];
-		c := array[3];
-		// this is the function large(m,m0,r,N,c);
-		s := 1; k := m0;
-		k := k + c[s];
-		// forse if √® meglio ??
-		s := (s mod m) + 1;
+		m := array[1]; k := array[2]; c := array[3];
+		s := 1; 		
 		while k le r do
 			x,u := isqrt(4*k*N); 
 			j := (Ceiling(Sqrt(N div k)) - 1) div (4*(r+1)) + 1;
+			// step necessary to have x = k + 1 mod 2
 			if ((x+k) mod 2) eq 0 then 
 				i1 := 1;
 				u := u + 2*x +1;
@@ -62,7 +74,7 @@ function Factorization_Lehman(N)
 				jump := 2;
 			end if;
 
-			// speed up : compress them
+			// step necessary to have x = k + n mod 4 (if k odd)
 			if odd then 
 				if ((k+N) mod 4) ne (x mod 4) then
 					i1 := i1 + 2;
@@ -71,19 +83,25 @@ function Factorization_Lehman(N)
 				end if;
 			end if;
 			
-			
-			for i in [i1..(j+1) by jump] do
+			// iteration on the x values described in the article
+			for _ in [i1..(j+1) by jump] do
+				// this step verify if u is quad res
+				// the idea is to save some verification since
+				// 	"u not a qr => u not a square in Z"
 				if QR[(u-1) mod qr_mod + 1] then
 					y,t := isqrt(u);
 					if t eq 0 then
-						// VICTORY
+						// VICTORY, y is a perfect square
 						p := Gcd(x-y,N);
 						q := N div p;
 						return Min(p,q),Max(p,q);
 					end if;
 				end if;
+
+				// increment of x and u
+				// Remark: u = x^2 - n so
+				// (x+j)^2 - n = x^2 - n + 2*j*x + j^2 
 				if odd then
-					
 					u := u + 8*(x+2);
 					x := x+ 4;
 				else
@@ -91,6 +109,7 @@ function Factorization_Lehman(N)
 					x := x + 2;
 				end if;
 			end for;
+			// increment of s mod m to iterate on c
 			k := k + c[s];
 			s := (s mod m) + 1;
 		end while;
