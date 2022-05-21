@@ -3,14 +3,7 @@
 //
 // NAME: ECDLP_PohligHellman(q,E,P,r,Q)
 //
-// INPUTS: -q is the number of elements of the finite field over which is defined the curve
-//         -E is the elliptic curve
-//         -P is the base point of the curve
-//         -r is the order of the point P
-//         -Q is a multiple of P
-//
-// OUTPUT: -d is the factor of Q with respect to P
-//
+// //
 // Remark. In the previous functions q, r and d are integers: in particular q
 // defines the finite field Fq and 1 < d < r; E is an elliptic curve; P and Q
 // are points over the elliptic curve E such that Q = d · P. You will find the
@@ -19,7 +12,19 @@
 
 
 ///////////////////////////////////FUNCTION///////////////////////////////////
-function ECDLP_PohlngHellman(q, E, P, r, Q)
+function ECDLP_PohligHellman(q, E, P, r, Q)
+/*
+	INPUTS: 
+		-q is the number of elements of the finite field over which is defined the curve
+        	-E is the elliptic curve
+         	-P is the base point of the curve
+         	-r is the order of the point P
+         	-Q is a multiple of P
+
+	OUTPUT: 
+		-d is the factor of Q with respect to P, i.e. dP = Q
+*/
+	// Remark : the sequences KSET, K, Qs, T will be initialized to buffer values to set the memories and avoid using Append
 	FactorsOfr:=Factorization(r);
 	KSET:=[1..#FactorsOfr];
 
@@ -27,23 +32,34 @@ function ECDLP_PohlngHellman(q, E, P, r, Q)
 	  
 		prime:=FactorsOfr[i][1];
 		e:=FactorsOfr[i][2];
+
 		coeff:=(r div prime); //Remark: r is divisible by prime
+
 		coeffP:=coeff*P;
 		K:=[0 : _ in [1..e]]; //this will be the sequence that contains all the k_(i-1)
 		Qs:=[Q : _ in [1..e]]; //this will be the sequence that contains all the Q_(i-1)
 
 
+		// if e gt 1 it makes sense to actually store all the values of k*coeffP and search on them
 		if e gt 1 then
-			//T := [ i*coeffP : i in [0..prime-1]];
-			
+			//T contains [ i*coeffP : i in [0..prime-1]];
 			T := [ Zero(E) : i in [1..prime]];
-			for j in [2..prime] do
-				T[j] := coeffP + T[j-1];
-			end for;
 			
-
+			if prime gt 2 and IsPrimitive(2,prime) then
+				Indeces := [0..(prime - 1)];
+				Indeces[2]:= 1;
+				T[2]:= coeffP;
+				for j in [3..prime] do
+					T[j]:= 2*T[j-1];
+					Indeces[j]:= (2*Indeces[j-1]) mod prime;
+				end for;
+				ParallelSort(~Indeces,~T);
+			else
+				for j in [2..prime] do
+					T[j] := coeffP + T[j-1];
+				end for;
+			end if;
 			K[1] := Position(T,coeff*Qs[1]) - 1; //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
-
 			for j in [2..e] do
 				Qs[j]:= Qs[j-1]-(K[j-1]* ((prime^(j-2))*P) );
 				K[j]:= Position(T,(coeff div (prime^(j-1)))*Qs[j]) - 1; //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
@@ -92,7 +108,7 @@ procedure test_pohlig_hellman()
 		P:= E!TestPH[i][1][4];
 		r:=TestPH[i][1][5];
 		Q:=E!TestPH[i][1][6];
-		d:= ECDLP_PohlngHellman(q,E,P,r,Q);
+		d:= ECDLP_PohligHellman(q,E,P,r,Q);
 		if d ne TestPH[i][2][1] then
 			"Error! The problem is for test:\n";
 			TestPH[i]; i; break;
