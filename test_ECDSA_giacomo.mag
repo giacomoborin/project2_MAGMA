@@ -18,10 +18,11 @@ function test_gen_ECDSA()
 end function;
 
 SetSeed(42);
-//TestECDSA := [* test_gen_ECDSA() : _ in [1..2000] *];
+TestECDSA := [* test_gen_ECDSA() : _ in [1..20000] *];
 
 // their test vectors
 
+/*
 TestECDSA:=
 [*
     <<<96705487, 96321645, 73680265, [ 95918504, 60746286, 1 ], 96705967, [
@@ -11661,3 +11662,5 @@ TestECDSA :=
     14916515579, 14813892046, 93611022625, 46261757187, 81889586796, 16396280778, 
     73222174709 ]>
 *];
+
+*/

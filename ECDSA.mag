@@ -1,4 +1,11 @@
+
 function mmod(a,m)
+/*
+	INPUTS:	-a an integer
+		-m a positive integer (the modulus)
+	OUTPUT:	-r an integer such that r = a mod m and r \in \[-m/2,m/2]
+
+*/
 	a := a mod m;
 	if a gt m div 2 then
 		return a - m;
@@ -57,7 +64,7 @@ end function;
 //-------------------------------------------
 
 
-load "test_ECDSA_giacomo.mag";
+load "test_ECDSA_big.mag";
 
 procedure test_ECDSA()
 	for test in TestECDSA do
