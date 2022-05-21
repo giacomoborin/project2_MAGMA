@@ -44,30 +44,25 @@ function ECDLP_PohligHellman(q, E, P, r, Q)
 		if e gt 1 then
 			//T contains [ i*coeffP : i in [0..prime-1]];
 			T := [ Zero(E) : i in [1..prime]];
-			
-			if prime gt 2 and IsPrimitive(2,prime) then
-				Indeces := [0..(prime - 1)];
-				Indeces[2]:= 1;
-				T[2]:= coeffP;
-				for j in [3..prime] do
-					T[j]:= 2*T[j-1];
-					Indeces[j]:= (2*Indeces[j-1]) mod prime;
-				end for;
-				ParallelSort(~Indeces,~T);
-			else
-				for j in [2..prime] do
-					T[j] := coeffP + T[j-1];
-				end for;
-			end if;
+			for j in [2..prime] do
+				T[j] := coeffP + T[j-1];
+			end for;
+
+			// evaluation of the dlog in basis prime
 			K[1] := Position(T,coeff*Qs[1]) - 1; //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
 			for j in [2..e] do
 				Qs[j]:= Qs[j-1]-(K[j-1]* ((prime^(j-2))*P) );
 				K[j]:= Position(T,(coeff div (prime^(j-1)))*Qs[j]) - 1; //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
 			end for;
 		else
+			// if e = 1 it is more efficent to not store the values of k*coeffP and perform the checks during the evaluation
 			Qs := coeff*Q;
+			// trivial case
 			if Qs eq Zero(E) then
 				K := [0];
+			// in this case we can exploit that 2*P is faster than P + Q
+			// the idea is to evaluate 2^i * P and return k = "^i mod p
+			// this is possible since 2 is primitive 
 			elif prime gt 2 and IsPrimitive(2,prime) then 
 				k := 1;
 				Point := coeffP;
@@ -77,6 +72,7 @@ function ECDLP_PohligHellman(q, E, P, r, Q)
 				end while;
 				K := [k];
 			else
+			// normal case
 				k := 1;
 				Point := coeffP;
 				while Point ne Qs do
@@ -86,12 +82,11 @@ function ECDLP_PohligHellman(q, E, P, r, Q)
 				K := [k];
 			end if;
 		end if;
-		
 
+		// elegant way to retrieve k
 		KSET[i] := Seqint(K,prime);
-		//KSET[i] :=&+[K[j]*(prime^(j-1)) : j in [1..e]] ; 
 	end for;
-
+	// with Chinese Reminder theorem we return the result
 	return CRT(KSET, [f[1]^f[2] : f in FactorsOfr]);
 end function;
 
