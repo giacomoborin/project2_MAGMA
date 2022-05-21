@@ -3,14 +3,7 @@
 //
 // NAME: ECDLP_PohligHellman(q,E,P,r,Q)
 //
-// INPUTS: -q is the number of elements of the finite field over which is defined the curve
-//         -E is the elliptic curve
-//         -P is the base point of the curve
-//         -r is the order of the point P
-//         -Q is a multiple of P
-//
-// OUTPUT: -d is the factor of Q with respect to P
-//
+// //
 // Remark. In the previous functions q, r and d are integers: in particular q
 // defines the finite field Fq and 1 < d < r; E is an elliptic curve; P and Q
 // are points over the elliptic curve E such that Q = d · P. You will find the
@@ -19,7 +12,19 @@
 
 
 ///////////////////////////////////FUNCTION///////////////////////////////////
-function ECDLP_PohlingHellman(q, E, P, r, Q)
+function ECDLP_PohligHellman(q, E, P, r, Q)
+/*
+	INPUTS: 
+		-q is the number of elements of the finite field over which is defined the curve
+        	-E is the elliptic curve
+         	-P is the base point of the curve
+         	-r is the order of the point P
+         	-Q is a multiple of P
+
+	OUTPUT: 
+		-d is the factor of Q with respect to P, i.e. dP = Q
+*/
+	// Remark : the sequences KSET, K, Qs, T will be initialized to buffer values to set the memories and avoid using Append
 	FactorsOfr:=Factorization(r);
 	KSET:=[1..#FactorsOfr];
 
@@ -27,74 +32,68 @@ function ECDLP_PohlingHellman(q, E, P, r, Q)
 	  
 		prime:=FactorsOfr[i][1];
 		e:=FactorsOfr[i][2];
+
 		coeff:=(r div prime); //Remark: r is divisible by prime
+
 		coeffP:=coeff*P;
 		K:=[0 : _ in [1..e]]; //this will be the sequence that contains all the k_(i-1)
 		Qs:=[Q : _ in [1..e]]; //this will be the sequence that contains all the Q_(i-1)
 
 
+		// if e gt 1 it makes sense to actually store all the values of k*coeffP and search on them
 		if e gt 1 then
-			//T := [ i*coeffP : i in [0..prime-1]];
-			
+			//T contains [ i*coeffP : i in [0..prime-1]];
 			T := [ Zero(E) : i in [1..prime]];
 			for j in [2..prime] do
 				T[j] := coeffP + T[j-1];
 			end for;
-			
 
+			// evaluation of the dlog in basis prime
 			K[1] := Position(T,coeff*Qs[1]) - 1; //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
-
 			for j in [2..e] do
 				Qs[j]:= Qs[j-1]-(K[j-1]* ((prime^(j-2))*P) );
 				K[j]:= Position(T,(coeff div (prime^(j-1)))*Qs[j]) - 1; //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
 			end for;
 		else
-			k := 0;
-			Point := Zero(E);
+			// if e = 1 it is more efficent to not store the values of k*coeffP and perform the checks during the evaluation
 			Qs := coeff*Q;
-			while Point ne Qs do
-				Point +:= coeffP;
-				k +:= 1;
-			end while;
-			K := [k];
+			// trivial case
+			if Qs eq Zero(E) then
+				K := [0];
+			// in this case we can exploit that 2*P is faster than P + Q
+			// the idea is to evaluate 2^i * P and return k = "^i mod p
+			// this is possible since 2 is primitive 
+			elif prime gt 2 and IsPrimitive(2,prime) then 
+				k := 1;
+				Point := coeffP;
+				while Point ne Qs do
+					Point := 2*Point;
+					k := (2*k) mod prime;
+				end while;
+				K := [k];
+			else
+			// normal case
+				k := 1;
+				Point := coeffP;
+				while Point ne Qs do
+					Point +:= coeffP;
+					k +:= 1;
+				end while;
+				K := [k];
+			end if;
 		end if;
-		
 
-		KSET[i] :=&+[K[j]*(prime^(j-1)) : j in [1..e]] mod (prime^e); 
+		// elegant way to retrieve k
+		KSET[i] := Seqint(K,prime);
 	end for;
-
-	return CRT(KSET, [FactorsOfr[i][1]^FactorsOfr[i][2] : i in [1..#FactorsOfr]]);
-	  
+	// with Chinese Reminder theorem we return the result
+	return CRT(KSET, [f[1]^f[2] : f in FactorsOfr]);
 end function;
 
 
 ///////////////////////////////////TV///////////////////////////////////
-TestPH:=
-[*
-    <<60872883217, 20605375946, 49012298200, [ 3544971859, 29340725662, 1 ], 60872468280, [ 12535672423, 60076452028, 1]>, <11965944219>>,
-    <<67041628747, 50311683121, 19112173264, [ 17408590446, 27746799318, 1 ], 67041775482, [ 28218200577, 60824433979, 1]>, <33114097482>>,
-    <<139028921, 40136234, 64889468, [ 55957440, 13278102, 1 ], 139024035, [ 32404327, 98489301, 1 ]>, <53629150>>,
-    <<1988605769, 1363824386, 1619016807, [ 33293158, 1242029574, 1 ], 1988617000, [ 352052668, 723783530, 1 ]>,<1470473227>>,
-    <<673271, 367717, 590919, [ 374788, 75835, 1 ], 672312, [ 670244, 54064, 1 ]>, <597224>>,
-    <<220641833989, 100663504978, 42369733123, [ 8384404723, 145794052365, 1 ], 220642539528, [ 53202097291,144401448240, 1 ]>, <215597750875>>,
-    <<126488380831, 7397922993, 47265453385, [ 54781079465, 12148398611, 1 ], 126488010044, [ 61806399107, 22769053295,1 ]>, <86307273664>>,
-    <<2171476991, 602867966, 2084786095, [ 109430927, 230097524, 1 ], 2171423280, [ 676807500, 2032925595, 1 ]>,<1570274595>>,
-    <<798880121587, 162164627520, 79422373918, [ 361065873490, 266997320809, 1 ], 399440284568, [ 21847275625,664499588128, 1 ]>, <68105118788>>,
-    <<8609879, 8397405, 4475343, [ 5336005, 5310237, 1 ], 8614548, [ 850637, 1184543, 1 ]>, <4962238>>,
-    <<260293751, 58536775, 74178110, [ 72021400, 142854478, 1 ], 130141524, [ 25053164, 197943467, 1 ]>, <58771764>>,
-    <<1836499421, 1510800915, 866394168, [ 469359511, 1002389423, 1 ], 918256856, [ 1460333111, 362284651, 1 ]>,<147405537>>,
-    <<263953037753, 166644178646, 243946206069, [ 162223027790, 96784207960, 1 ], 263953324488, [ 136282041164,242325396999, 1 ]>, <5366005536>>,
-    <<1353479, 456626, 1340487, [ 1144830, 153968, 1 ], 1353562, [ 547911, 932596, 1 ]>, <1316183>>,
-    <<143168227, 20053024, 28628586, [ 118669950, 133292104, 1 ], 71594270, [ 14719093, 124365668, 1 ]>, <58998521>>,
-    <<20304579521, 9147980821, 1871435607, [ 20214071767, 15378531381, 1 ], 5076213996, [ 15055205524, 13834281743, 1]>, <3113604841>>,
-    <<1980537773, 802065221, 463458768, [ 1334927172, 48704105, 1 ], 1980569083, [ 643659573, 669493000, 1 ]>,<639922144>>,
-    <<200354506277, 182039118628, 72168646826, [ 84727812253, 32767359670, 1 ], 200353813962, [ 197877907995,131246324029, 1 ]>, <55387192837>>,
-    <<533280901, 396141830, 448522570, [ 375079737, 220169975, 1 ], 266652372, [ 310533503, 517169335, 1 ]>,<107172399>>,
-    <<1174549, 1088683, 1164912, [ 954535, 844330, 1 ], 1172660, [ 1060473, 932874, 1 ]>, <262833>>
-*];
 
-
-//load "Test_ECDLP.mag";
+load "Test_ECDLP.mag";
 procedure test_pohlig_hellman()
 	for i in [1..#TestPH] do 
 		q:= TestPH[i][1][1];
@@ -104,12 +103,10 @@ procedure test_pohlig_hellman()
 		P:= E!TestPH[i][1][4];
 		r:=TestPH[i][1][5];
 		Q:=E!TestPH[i][1][6];
-		d:= ECDLP_PohlingHellman(q,E,P,r,Q);
+		d:= ECDLP_PohligHellman(q,E,P,r,Q);
 		if d ne TestPH[i][2][1] then
 			"Error! The problem is for test:\n";
 			TestPH[i]; i; break;
-		else 
-			"ok";
 		end if;
 	end for;
 end procedure;
