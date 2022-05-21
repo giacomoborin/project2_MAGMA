@@ -1,3 +1,4 @@
+/*
 function prop1(S)
 	S[1] := S[1] mod S[2];
 	return S;
@@ -24,14 +25,14 @@ function prop4(S)
 end function;
 
 
-function JacobySymbol(a,n)
+function OURJacobiSymbol(a,n)
 	r := 1;
 	while a gt 1 do
-		/*
-		S := prop32(S);
-		S := prop4(S);
-		S := prop1(S);
-		*/
+		
+		// S := prop32(S);
+		// S := prop4(S);
+		// S := prop1(S);
+		
 		seq := Intseq(a,2);
 		v2 := Index(seq,1) - 1;
 		a:=Seqint(seq[(v2+1)..#seq],2);
@@ -51,7 +52,7 @@ function JacobySymbol(a,n)
 	end while;
 	return r;
 end function;
-
+*/
 
 function SolovayStrassen(n)
 /*
@@ -59,22 +60,31 @@ function SolovayStrassen(n)
      	OUTPUTS:  -bool, a Boolean value.
 */
 	/*
-	Non so se mettere questo controllo
+	We could add this first and trivial check if we suppose that n could be even too
 	if n mod 2 eq 0 then 
 		return false;
 	end if;
 	*/
+	//For the SolovayStrassen algorithm, suppose that n is odd and greter than 1
+	
 	for i in [1..10] do
-		a := Random(1,n-1);
+		//Try for a random base a
+		a := Random(2,n-1);
+		//There exists a built-in function for JacoobiSymbol that is much faster than whatever we can manually implement
 		x := JacobiSymbol(a, n) mod n;
+		//From the properties of the JacobiSymbol we have that if there exists such a a, we are sure that the number x is composite
+		//because JacobiSymbol(a, n) eq 0 if GCD(a,n) ne 1
 		if x eq 0 then
 			return false;
 		end if;
+		//Here we suppose that n is odd, so (n-1) is even and we can perform div (that is much faster than the standard division /)
 		y := Modexp(a,(n-1) div 2, n);
+		//If n is composite, it may be the case that the following condition does not hold
 		if x ne y then
 			return false;
 		end if;
 	end for;
+	//If the algorithm arrives here, we are sure that n is prime or is Euler pseudo-prime to the base a for the a chosen before
 	return true;
 end function;
 
@@ -85,17 +95,16 @@ Remark. Since this is a probabilistic algorithm, we require that you repeat
 the test for 10 times before outputting the result than n is prime.
 */
 
-
+/*
 // our file with lots of test vectors
 load "new_test_vectors.mag";
 
 S := [ Random(10^5,10^7) : _ in [1..(20*6100)]];
 TestSolovay := [ s : s in S | s mod 2 eq 1];
-#TestSolovay;
 
 procedure test_solovay_strassen()
 	for test in TestSolovay do
-		if not SolovayStrassen(test) eq IsPrime(test) then
+		if SolovayStrassen(test) ne IsPrime(test) then
 			"Error! The problem is for test:\n";
 			test; break;
 		end if;
@@ -103,3 +112,4 @@ procedure test_solovay_strassen()
 end procedure;
 
 time test_solovay_strassen();
+*/
