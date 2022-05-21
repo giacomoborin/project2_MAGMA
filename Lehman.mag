@@ -7,7 +7,8 @@ end function;
 
 // quadratic residue modulo qr_mod
 //qr_mod := 279; // time 13.619 sec
-qr_mod := 385; // time 12.800 sec
+qr_mod := 3465; // time 
+//qr_mod := 385; // time 12.800 sec
 //qr_mod := 720; // time 14.210 sec
 //qr_mod := 200;
 //qr_mod := 729; // time 14.670 sec
@@ -35,7 +36,6 @@ function Factorization_Lehman(N)
 		<2,-2, [4,2]>,
 		<1,-1, [2]>
 	     ];
-	n := N;
 	for array in C do
 		m:= array[1]; m0 := array[2];
 		c := array[3];
@@ -45,9 +45,8 @@ function Factorization_Lehman(N)
 		// forse if √® meglio ??
 		s := (s mod m) + 1;
 		while k le r do
-			x,u := isqrt(4*k*n); 
-			buff,t := isqrt(n div k);
-			j := (buff - 1) div (4*(r+1)) + 1;
+			x,u := isqrt(4*k*N); 
+			j := (Ceiling(Sqrt(N div k)) - 1) div (4*(r+1)) + 1;
 			if ((x+k) mod 2) eq 0 then 
 				i1 := 1;
 				u := u + 2*x +1;
@@ -65,7 +64,7 @@ function Factorization_Lehman(N)
 
 			// speed up : compress them
 			if odd then 
-				if ((k+n) mod 4) ne (x mod 4) then
+				if ((k+N) mod 4) ne (x mod 4) then
 					i1 := i1 + 2;
 					u := u + 4*(x+1);
 					x := x + 2;
@@ -78,8 +77,8 @@ function Factorization_Lehman(N)
 					y,t := isqrt(u);
 					if t eq 0 then
 						// VICTORY
-						p := Gcd(x-y,n);
-						q := n div p;
+						p := Gcd(x-y,N);
+						q := N div p;
 						return Min(p,q),Max(p,q);
 					end if;
 				end if;
