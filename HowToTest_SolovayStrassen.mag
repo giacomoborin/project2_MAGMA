@@ -1,0 +1,16 @@
+// our file with lots of test vectors
+load "new_test_vectors.mag";
+
+S := [ Random(10^5,10^7) : _ in [1..(20*6100)]];
+TestSolovay := [ s : s in S | s mod 2 eq 1];
+
+procedure test_solovay_strassen()
+	for test in TestSolovay do
+		if SolovayStrassen(test) ne IsPrime(test) then
+			"Error! The problem is for test:\n";
+			test; break;
+		end if;
+	end for;
+end procedure;
+
+time test_solovay_strassen();
