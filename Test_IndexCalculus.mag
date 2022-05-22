@@ -15,6 +15,7 @@ function test_vector_generator()
 		h:=Modexp(g,exponent,p);
 		TestIndexC:=Append(TestIndexC, [p,g,h,exponent]);
 	end for;
+	return TestIndexC;
 end function;
 
 TestIndexC:=test_vector_generator();

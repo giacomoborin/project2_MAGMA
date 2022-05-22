@@ -1065,7 +1065,6 @@ TestPH:=
 
 ///////////////////////////////////TV///////////////////////////////////
 
-load "Test_ECDLP_PohligHellman.mag";
 procedure test_pohlig_hellman()
 	for i in [1..#TestPH] do 
 		q:= TestPH[i][1][1];

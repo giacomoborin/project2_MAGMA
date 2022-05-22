@@ -226,12 +226,11 @@ TestSolovay :=
 8530669, 2863063, 3069733, 4573897, 4338185, 5202523, 2739741, 2530983, 9671349, 7613261, 5305125, 3995861, 3211235, 3037035,
 2954461, 5247781, 8873889, 3287017, 330141 ];
 
-/*
+
 S := [ Random(10^5,10^7) : _ in [1..(20*6100)]];
 TestSolovay := [ s : s in S | s mod 2 eq 1];
-*/
 
-load "Solovay_Strassen.mag";
+
 
 procedure test_solovay_strassen()
 	for test in TestSolovay do
