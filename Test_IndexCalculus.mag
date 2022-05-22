@@ -1,4 +1,46 @@
-TestIndexC:=
+//////[prime p, primitive element g, element h, exponent s.t. g^exponent=h]//////
+
+load "safeprimes.mag";
+
+function test_vector_generator()
+	SetSeed(42);
+	TestIndexC:=[];
+	for i in [1..1000] do //Il TV sarà grande 1000
+		p:=Random(safeprimes);
+		g:=Integers()!Random(GF(p));
+		while (g eq 0) or (Order(GF(p)!g) ne (p-1)) do
+			g:=Integers()!Random(GF(p));
+		end while;
+		exponent:=Random(2,p-2);//Sto assumendo che l'esponente sia minore di p-1 altrimenti sarebbe sufficiente utilizzare la Field equation per abbassare il grado
+		h:=Modexp(g,exponent,p);
+		TestIndexC:=Append(TestIndexC, [p,g,h,exponent]);
+	end for;
+end function;
+
+TestIndexC:=test_vector_generator();
+
+//////////////////////////////TEST//////////////////////////////
+
+procedure test_index_calculus()
+	err:=0;
+	for test in TestIndexC do
+		 p:=test[1];
+		 F:=GF(p);
+		 g:=F!test[2];
+		 h:=F!test[3];
+		 if not test[4] eq IndexCalculus(p,g,h) then
+			err+:=1;
+			"Error",test;
+		end if;
+	end for;
+end procedure;
+
+"Time for", #TestIndexC, ":";
+time test_index_calculus();
+
+//Esempio di testvector
+
+/*TestIndexC:=
 [
     [ 51047, 48237, 7421, 7712 ],
     [ 37799, 29997, 14261, 15137 ],
@@ -40,25 +82,4 @@ TestIndexC:=
     [ 18720539, 5806114, 18015196, 11247990 ],
     [ 93520067, 47677472, 51567693, 71140339 ],
     [ 80711039, 19779831, 3544530, 28307137 ]
-];//
-
-//////[prime p, primitive element g, element h, exponent s.t. g^exponent=h]//////
-
-load "safeprimes.mag";
-
-TestIndexC:=[];
-
-SetSeed(42);
-
-for i in [1..1000] do //Il TV sarà grande 1000
-	p:=Random(safeprimes);
-	g:=Integers()!Random(GF(p));
-	while (g eq 0) or (Order(GF(p)!g) ne (p-1)) do
-		g:=Integers()!Random(GF(p));
-	end while;
-	exponent:=Random(2,p-2);//Sto assumendo che l'esponente sia minore di p-1 altrimenti sarebbe sufficiente utilizzare la Field equation per abbassare il grado
-	h:=Modexp(g,exponent,p);
-	TestIndexC:=Append(TestIndexC, [p,g,h,exponent]);
-end for;
-
-
+];*/
