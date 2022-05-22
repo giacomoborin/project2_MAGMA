@@ -9,11 +9,15 @@
   // 
   // OUTPUTS: -x integer.
   // Where gx ≡ h mod p.
-
+  /*
+  The idea behind this algorithm is to compute small logarithm (also called index) with linear congruences 
+  and from them compute the big discrete logarithm we are interested in
+  */
 
 
 function IntermediateZeroPadding(B, factors)
-//////Now we want to memorize the factorization setting the zeros where the element of B is missing in factorization of exponent//////
+/*Now we want to memorize the factorization: setting the zeros where the element of B is missing in factorization of exponent:
+B:=[p1,p2,p3,..,pn], n:=[<p1,e1>, <p2,e2>, <p3,e3>, ..., <pn, en>] -> IntermediateZeroPadding(B, factors):=[e1,e2,e3,..en]*/
   	counter:=1;
   	seq:=[0 : _ in B];
   	for i in [1..#B] do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
@@ -28,9 +32,8 @@ end function;
 
 
 function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q)
-	//////In the next variable, there will be a vectors of different universe//////
-	//SeqMatrixOfexponent;
-  	//////This cycle will find the solution in modulus//////
+  	//////We will find the solutions in modulus//////
+	/////Remark, we are in the case where the primes are SophieGermain//////
 	dim := #B + 1;
 
 	// solutions for 2
@@ -55,14 +58,10 @@ function IndexCalculus(p,g,h)
 	h:=Integers()!h;
 	//////Setting the bound//////
 
-	// choice 1 : slowest for now
-	//TopB:=Ceiling(Exp( Sqrt(Log(2,p)*Log(2,Log(2,p))) ));
-
-	// choice 2 : 0.030 sec
-	//TopB:=Ceiling(Exp( Sqrt(Log(Exp(1),p)*Log(Exp(1),Log(Exp(1),p))) ));
-
-	// choice 3 : 0.030 sec || the fastest in the new implementation!!
-	//TopB:=Ceiling(Exp( (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+	/*We tried some choice of TopB:=Ceiling(Exp(c*(Log(Exp(1),N)^alpha)*(Log(Exp(1),Log(Exp(1),N))^(1-alpha))));
+	changing the value of alpha and c we can see that alpha:=1/3 and c:=1.17 have good chance to be good values of the parameters
+	Remark: there exists a good value of the parameter c for any value of the parameter alpha where c in (0..1) and alpha in (0..1) in the Rationals
+	*/
 	
 	TopB:=Ceiling(Exp(1.17* (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
 
@@ -76,24 +75,19 @@ function IndexCalculus(p,g,h)
 	//////Looking for g^exponent s.t. it is B-smooth and setting variables//////
 	exponent:=Random(2,p-2);
 	rows := 0;
-	/*
-	some choices for this percentage:
-	- <0.94, 0.47> time 7.8 sec
-	- <0.90, 0.07> time 7.5 sec
-	- <0.96, 0.22> time 7.55 sec
-	- <0,81, 0,32> time 9. sec
+	/*We tried some choice of bound_rows and bound_new_rows
+	and bound_rows:=Floor((#B)*(0.78)); and bound_new_rows:=Floor((#B)*(0.32)); have good chance to be good values of the parameters
 	*/
 	bound_rows := Floor((#B)*(0.78));
-	//bound_rows := #B;
 	new_rows := 0;
-	bound_new_rows := Floor((#B)*(0.32));
-	//tentativi := 0;
+	bound_new_rows :=Floor((#B)*(0.32));
+	//attempt := 0;
 	repeat
 		repeat 
 			FactorsOfgtoexponents:=Factorization((h*Modexp(g,-exponent,p)) mod p);
 			//////Checking the B-smoot property//////
 			if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
-	      //////We add the exponent g^exponent to the vector of exponents//////
+	      		//////We add the exponent g^exponent to the vector of exponents//////
 				Append(~VectorOfexponent, exponent);
 	      
 				//////IntermediatePadding//////
@@ -105,10 +99,10 @@ function IndexCalculus(p,g,h)
 			exponent:=Random(2,p-2);
 		until (rows gt bound_rows) and (new_rows gt bound_new_rows);
 		new_rows := 0;
-		//tentativi +:= 1;
+		//attempt +:= 1;
 		sol := SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q);
   	until Modexp(g,sol,p) eq h;
-	//tentativi;
+	//attempt;
 	return sol;
 end function;
 
