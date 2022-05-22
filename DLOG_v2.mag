@@ -83,10 +83,10 @@ function IndexCalculus(p,g,h)
 	- <0.96, 0.22> time 7.55 sec
 	- <0,81, 0,32> time 9. sec
 	*/
-	bound_rows := Floor((#B)*(0.96));
+	bound_rows := Floor((#B)*(0.78));
 	//bound_rows := #B;
 	new_rows := 0;
-	bound_new_rows := Floor((#B)*(0.22));
+	bound_new_rows := Floor((#B)*(0.32));
 	//tentativi := 0;
 	repeat
 		repeat 
