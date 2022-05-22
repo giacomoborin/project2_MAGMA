@@ -1,0 +1,29 @@
+
+//-------------------------------------------
+//----------------TEST PART------------------
+//-------------------------------------------
+
+
+load "test_ECDSA_big.mag";
+
+procedure test_ECDSA()
+	for test in TestECDSA do
+		el:=test[1];
+		M:=test[2];
+		q:=el[1][1];
+		E:=EllipticCurve( [GF(q)!el[1][2],el[1][3]]  );
+		P:=E!el[1][4];
+		r:=el[1][5];
+		d:=el[2][1];
+		for m in M do
+			R,s:=ECDSA_Signing(q,E,P,r,d,m);
+			if not ECDSA_Verification(q, E, P, r, E!el[1][6], m, E!R, s) then
+				"Error! These are test and m:\n";
+				test; m; 
+				break; 
+			end if;
+		end for;
+	end for;
+end procedure;
+
+time test_ECDSA();
