@@ -1,0 +1,488 @@
+/*
+1. SolovayStrassen
+2. Factorization_lehman
+3. IndexCalculus
+4. ECDSA
+5. ECDLP_PohligHellman
+*/
+
+///////////////////////////////////SolovayStrassen///////////////////////////////////
+
+/*
+function prop1(S)
+	S[1] := S[1] mod S[2];
+	return S;
+end function;
+
+function prop32(S)
+	seq := Intseq(S[1],2);
+	v2 := Index(seq,1) - 1;
+	S[1]:=Seqint(seq[(v2+1)..#seq],2);
+	if (v2 mod 2 eq 1) and ((S[2] mod 8) in [3,5]) then
+		S[3]:=S[3]*(-1);
+	end if;
+	return S;
+end function;
+
+function prop4(S)
+	if (S[1] mod 4 eq 3) and (S[2] mod 4 eq 3) then
+		S[3] := S[3]*(-1);
+	end if;
+	buff := S[1];
+	S[1] := S[2];
+	S[2] := buff;
+	return S;
+end function;
+
+
+function OURJacobiSymbol(a,n)
+	r := 1;
+	while a gt 1 do
+		
+		// S := prop32(S);
+		// S := prop4(S);
+		// S := prop1(S);
+		
+		seq := Intseq(a,2);
+		v2 := Index(seq,1) - 1;
+		a:=Seqint(seq[(v2+1)..#seq],2);
+		if (v2 mod 2 eq 1) and ((n mod 8) in [3,5]) then
+			r:=r*(-1);
+		end if;
+
+		if (a mod 4 eq 3) and (n mod 4 eq 3) then
+			r := r*(-1);
+		end if;
+		buff := a;
+		a := n;
+		n := buff;
+
+		a := a mod n;	
+
+	end while;
+	return r;
+end function;
+*/
+
+function SolovayStrassen(n)
+/*
+	INPUTS:   -n integer to be tested.
+     	OUTPUTS:  -bool, a Boolean value.
+*/
+	/*
+	We could add this first and trivial check if we suppose that n could be even too
+	if n mod 2 eq 0 then 
+		return false;
+	end if;
+	*/
+	//For the SolovayStrassen algorithm, suppose that n is odd and greter than 1
+	
+	for i in [1..10] do
+		//Try for a random base a
+		a := Random(2,n-1);
+		//There exists a built-in function for JacoobiSymbol that is much faster than whatever we can manually implement
+		x := JacobiSymbol(a, n) mod n;
+		//From the properties of the JacobiSymbol we have that if there exists such a a, we are sure that the number x is composite
+		//because JacobiSymbol(a, n) eq 0 if GCD(a,n) ne 1
+		if x eq 0 then
+			return false;
+		end if;
+		//Here we suppose that n is odd, so (n-1) is even and we can perform div (that is much faster than the standard division /)
+		y := Modexp(a,(n-1) div 2, n);
+		//If n is composite, it may be the case that the following condition does not hold
+		if x ne y then
+			return false;
+		end if;
+	end for;
+	//If the algorithm arrives here, we are sure that n is prime or is Euler pseudo-prime to the base a for the a chosen before
+	return true;
+end function;
+
+
+/*
+The output bool is true if and only if n is prime, false otherwise.
+Remark. Since this is a probabilistic algorithm, we require that you repeat
+the test for 10 times before outputting the result than n is prime.
+*/
+
+
+///////////////////////////////////Factorization_Lehman///////////////////////////////////
+
+function isqrt(n)
+/*
+     INPUTS:  -n non negative integer 
+     OUTPUT:  -j smallest integer such that j^2-n > 0
+              -j^2 -n, in particular it is = 0 iff n is a square in Z
+*/
+
+	j := Ceiling(Sqrt(n));
+	return j,j^2 -n;
+end function;
+
+
+
+// quadratic residue modulo qr_mod
+qr_mod := 3465;
+/* here we have several quantities suitable for qr_mod, some of them are
+- 729 (the article one)
+- 385
+- 3465 (the chosen one)
+- 5355
+- 5985
+- 7735
+- 8190
+- 9009
+*/
+// here we use qr_mod to evaluate the quadratic residue modulo qr_mod
+// we have that: "n is quad. res. for qr_mod" iff QR[n]
+
+QR := [false : _ in [1..qr_mod]];
+for i in [1..qr_mod] do
+	QR[(i^2 - 1) mod qr_mod + 1]:= true;
+end for;
+
+function Factorization_Lehman(N)
+/*
+     INPUTS:  -N is the semiprime
+     OUTPUT:  -p is the smallest prime factor of N
+              -q is the largest prime factor of N
+*/
+
+	// here we fix the value for r as n^(1/4)
+	// we have chosen n^(1/4) instead of n^(1/3) for efficency reason 
+	// the theorem still works, infact we know 
+	// p ~ 2^20, n ~ 2^40, r = n^(1/4) ~ 2^10
+	// (n/r+1)^(1/2) ~ 2^15 << 2^20
+	r := Floor(N^(1/4)) + 1 ;
+	// vectors used for iteration on the values of k \in [1..r]
+	// this is necessary, as explained in the article, to start from values of k with a lot of divisors
+	C := [ 	<1,30,[30]>,
+		<4,24,[24,24,24,48]>,
+		<4,12,[24,48,24,24]>,
+		<4,18,[36,72,36,36]>,
+		<8,6, [36,24,12,24,12,24,36,12]>,
+		<2,2, [2,4]>,
+		<1,1, [2]>
+	     ];
+	for array in C do
+		m := array[1]; k := array[2]; c := array[3];
+		s := 1; 		
+		while k le r do
+			x,u := isqrt(4*k*N); 
+			j := (Ceiling(Sqrt(N div k)) - 1) div (4*(r+1)) + 1;
+			// step necessary to have x = k + 1 mod 2
+			if ((x+k) mod 2) eq 0 then 
+				i1 := 1;
+				u := u + 2*x +1;
+				x := x + 1;
+			else
+				i1 := 0;
+			end if;
+
+			odd := (k mod 2) eq 1;
+			if odd then 
+				jump := 4;
+			else 
+				jump := 2;
+			end if;
+
+
+			// step necessary to have x = k + n mod 4 (if k odd)
+			if odd then 
+				if ((k+N) mod 4) ne (x mod 4) then
+					i1 := i1 + 2;
+					u := u + 4*(x+1);
+					x := x + 2;
+        end if;
+			end if;
+			
+			// iteration on the x values described in the article
+			for _ in [i1..(j+1) by jump] do
+				// this step verify if u is quad res
+				// the idea is to save some verification since
+				// 	"u not a qr => u not a square in Z"
+				if QR[(u-1) mod qr_mod + 1] then
+					y,t := isqrt(u);
+					if t eq 0 then
+						// VICTORY, y is a perfect square
+						p := Gcd(x-y,N);
+						q := N div p;
+						return Min(p,q),Max(p,q);
+					end if;
+				end if;
+
+				// increment of x and u
+				// Remark: u = x^2 - n so
+				// (x+j)^2 - n = x^2 - n + 2*j*x + j^2 
+				if odd then
+					u := u + 8*(x+2);
+					x := x+ 4;
+				else
+					u := u + 4*(x+1);
+					x := x + 2;
+				end if;
+			end for;
+			// increment of s mod m to iterate on c
+			k := k + c[s];
+			s := (s mod m) + 1;
+		end while;
+	end for;
+	return 1,N;
+end function;
+
+
+///////////////////////////////////IndexCalculus///////////////////////////////////
+
+function IntermediateZeroPadding(B, factors)
+/*Now we want to memorize the factorization: setting the zeros where the element of B is missing in factorization of exponent:
+B:=[p1,p2,p3,..,pn], n:=[<p1,e1>, <p2,e2>, <p3,e3>, ..., <pn, en>] -> IntermediateZeroPadding(B, factors):=[e1,e2,e3,..en]*/
+  	counter:=1;
+  	seq:=[0 : _ in B];
+  	for i in [1..#B] do //for prime in B means that we analize all the primes that are in B (g^exponent is B-smooth)
+		if (counter le #factors) and (B[i] eq factors[counter][1]) then
+			seq[i] := factors[counter][2];
+			counter+:=1;
+		end if;
+  	end for;
+	return seq;
+end function;
+
+
+
+function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q)
+  	//////We will find the solutions in modulus//////
+	/////Remark, we are in the case where the primes are SophieGermain//////
+	dim := #B + 1;
+
+	// solutions for 2
+	prime:=2;
+	M := Transpose(Matrix( GF(prime), #SeqMatrixOfexponent, dim, SeqMatrixOfexponent ));
+	Sol2 := Solution( M, Vector(GF(prime),VectorOfexponent));
+
+	// solutions for q = (p-1)/2
+	prime:=q; 
+	M := Transpose(Matrix( GF(prime), #SeqMatrixOfexponent, dim, SeqMatrixOfexponent ));
+	Solq := Solution( M, Vector(GF(prime),VectorOfexponent));
+
+	return CRT([Integers()!Sol2[dim], Integers()!Solq[dim]], [2,q]);
+end function;
+
+
+
+//////Primes p are Sophie Germain p=2q+1//////
+function IndexCalculus(p,g,h)
+/*
+   	INPUTS:	-p prime;
+           	-g primitive root modulo p;
+           	-h element of F_p*.
+   
+   	OUTPUT: -x integer, where g^x = h mod p.
+
+  	The idea behind this algorithm is to compute small logarithm (also called index) with linear congruences and from them compute the big discrete logarithm we are interested in
+*/
+	g:=Integers()!g;
+	h:=Integers()!h;
+  	q := (p-1) div 2;
+
+	//////Setting the bound//////
+
+	/*We tried some choice of TopB:=Ceiling(Exp(c*(Log(Exp(1),N)^alpha)*(Log(Exp(1),Log(Exp(1),N))^(1-alpha))));
+	changing the value of alpha and c we can see that alpha:=1/3 and c:=1.17 have good chance to be good values of the parameters
+	Remark: there exists a good value of the parameter c for any value of the parameter alpha where c in (0..1) and alpha in (0..1) in the Rationals
+	*/
+	
+	TopB:=Ceiling(Exp(1.17* (  (Log(Exp(1),p)*  ((Log(Exp(1),Log(Exp(1),p)))^2)  )  )^(1/3) ));
+
+
+	B:=PrimesUpTo(TopB);
+
+	//////Initialize variables//////
+	VectorOfexponent:=[]; //this will hold all the exponent that satisfy our property
+	SeqMatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
+
+	//////Looking for g^exponent s.t. it is B-smooth and setting variables//////
+	exponent:=Random(2,p-2);
+	rows := 0;
+	/*We tried some choice of bound_rows and bound_new_rows
+	and bound_rows:=Floor((#B)*(0.78)); and bound_new_rows:=Floor((#B)*(0.32)); have good chance to be good values of the parameters
+	*/
+	bound_rows := Floor((#B)*(0.78));
+	new_rows := 0;
+	bound_new_rows :=Floor((#B)*(0.32));
+	repeat
+		repeat 
+			FactorsOfgtoexponents:=Factorization((h*Modexp(g,-exponent,p)) mod p);
+			//////Checking the B-smoot property//////
+			if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
+	      		//////We add the exponent g^exponent to the vector of exponents//////
+				Append(~VectorOfexponent, exponent);
+	      
+				//////IntermediatePadding//////
+				seq:=IntermediateZeroPadding(B, FactorsOfgtoexponents) cat [1];
+				Append(~SeqMatrixOfexponent, seq);
+				rows+:=1;
+				new_rows+:=1;
+			end if;
+			exponent:=Random(2,p-2);
+		until (rows gt bound_rows) and (new_rows gt bound_new_rows);
+		new_rows := 0;
+		sol := SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q);
+  	until Modexp(g,sol,p) eq h;
+	return sol;
+end function;
+
+
+
+///////////////////////////////////ECDSA///////////////////////////////////
+
+function mmod(a,m)
+/*
+	INPUTS:	-a an integer
+		-m a positive integer (the modulus)
+	OUTPUT:	-r an integer such that r = a mod m and r \in \[-m/2,m/2]
+
+*/
+	a := a mod m;
+	if a gt m div 2 then
+		return a - m;
+	else 
+		return a;
+	end if;
+end function;
+
+function ECDSA_Signing(q,E,G,r,d,m)
+/*
+     INPUTS: -q is the number of elements of the finite
+              field over which is defined the curve
+             -E is the elliptic curve
+             -G is the base point of E
+             -r is the order of the point G
+             -d is Alice’s private key
+             -m is the message to be signed
+     OUTPUT: -(R,s) is the digital signature
+*/
+	
+
+	// k is a secret random parameter chosen in Z_r
+  	// in particular it lie in [-r/2,r/2] so that we may save one doublig
+	k := Random(-r div 2,r div 2);
+	R := k*G;
+	// we need to cast R[1] to see it as an integer
+	s := (m + d*Integers()!(R[1]))*Modinv(k,r) mod r;
+	return R,s;
+end function;
+
+
+function ECDSA_Verification(q,E,G,r,Q,m,R,s)
+/*
+     INPUTS: -q is the number of elements of the finite
+              field over which is defined the curve
+             -E is the elliptic curve
+             -G is the base point of E
+             -r is the order of the point G
+             -Q is Alice's public key
+             -m is the message to be signed
+             -R is the first part of the digital signature
+             -s is the second part of the digital signature
+     OUTPUT: -bool is a boolean that says if the
+              sign is valid
+*/
+	i := Modinv(s,r);
+	u1 := mmod(m*i,r);
+	u2 := mmod(Integers()!(R[1])*i,r);
+  	// observe that here using mmod we save 2 doublings 
+	return (u1*G + u2*Q) eq R;
+end function;
+
+
+///////////////////////////////////ECDLP_PohligHellman///////////////////////////////////
+
+// 5. Write a function ECDLP PohligHellman(q,E,P,r,Q) that breaks the Elliptic
+// Curve Discrete Logarithm Problem (ECDLP) with the following specifications:
+//
+// NAME: ECDLP_PohligHellman(q,E,P,r,Q)
+//
+// //
+// Remark. In the previous functions q, r and d are integers: in particular q
+// defines the finite field Fq and 1 < d < r; E is an elliptic curve; P and Q
+// are points over the elliptic curve E such that Q = d · P. You will find the
+// description of the algorithms in the attached files.
+
+
+function ECDLP_PohligHellman(q, E, P, r, Q)
+/*
+	INPUTS: 
+		-q is the number of elements of the finite field over which is defined the curve
+        	-E is the elliptic curve
+         	-P is the base point of the curve
+         	-r is the order of the point P
+         	-Q is a multiple of P
+
+	OUTPUT: 
+		-d is the factor of Q with respect to P, i.e. dP = Q
+*/
+	// Remark : the sequences KSET, K, Qs, T will be initialized to buffer values to set the memories and avoid using Append
+	FactorsOfr:=Factorization(r);
+	KSET:=[1..#FactorsOfr];
+
+	for i in [1..#FactorsOfr] do
+	  
+		prime:=FactorsOfr[i][1];
+		e:=FactorsOfr[i][2];
+
+		coeff:=(r div prime); //Remark: r is divisible by prime
+
+		coeffP:=coeff*P;
+		K:=[0 : _ in [1..e]]; //this will be the sequence that contains all the k_(i-1)
+		Qs:=[Q : _ in [1..e]]; //this will be the sequence that contains all the Q_(i-1)
+
+
+		// if e gt 1 it makes sense to actually store all the values of k*coeffP and search on them
+		if e gt 1 then
+			//T contains [ i*coeffP : i in [0..prime-1]];
+			T := [ Zero(E) : i in [1..prime]];
+			for j in [2..prime] do
+				T[j] := coeffP + T[j-1];
+			end for;
+
+			// evaluation of the dlog in basis prime
+			K[1] := Position(T,coeff*Qs[1]) - 1; //coeff*Q=k_0(coeff*P), hence T(coeff*Q)=k_0
+			for j in [2..e] do
+				Qs[j]:= Qs[j-1]-(K[j-1]* ((prime^(j-2))*P) );
+				K[j]:= Position(T,(coeff div (prime^(j-1)))*Qs[j]) - 1; //coeff*_i=k_i(coeff*P), hence T(coeff*Q_i)=k_i
+			end for;
+		else
+			// if e = 1 it is more efficent to not store the values of k*coeffP and perform the checks during the evaluation
+			Qs := coeff*Q;
+			// trivial case
+			if Qs eq Zero(E) then
+				K := [0];
+			// in this case we can exploit that 2*P is faster than P + Q
+			// the idea is to evaluate 2^i * P and return k = "^i mod p
+			// this is possible since 2 is primitive 
+			elif prime gt 2 and IsPrimitive(2,prime) then 
+				k := 1;
+				Point := coeffP;
+				while Point ne Qs do
+					Point := 2*Point;
+					k := (2*k) mod prime;
+				end while;
+				K := [k];
+			else
+			// normal case
+				k := 1;
+				Point := coeffP;
+				while Point ne Qs do
+					Point +:= coeffP;
+					k +:= 1;
+				end while;
+				K := [k];
+			end if;
+		end if;
+
+		// elegant way to retrieve k
+		KSET[i] := Seqint(K,prime);
+	end for;
+	// with Chinese Reminder theorem we return the result
+	return CRT(KSET, [f[1]^f[2] : f in FactorsOfr]);
+end function;
