@@ -1,0 +1,16 @@
+//////////////////////////////TEST//////////////////////////////
+ 
+load "TestDLOG.mag";
+#TestIndexC;
+err:=0;
+time for test in TestIndexC do
+	//test;
+	p:=test[1];
+	g:=test[2];
+	h:=test[3];
+	if not test[4] eq IndexCalculus(p,g,h) then
+		err+:=1;
+		"Error",test;
+	end if;
+end for;
+err/#TestIndexC;
