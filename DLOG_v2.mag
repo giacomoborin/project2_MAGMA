@@ -46,6 +46,8 @@ function IndexCalculus(p,g,h)
 
   	The idea behind this algorithm is to compute small logarithm (also called index) with linear congruences and from them compute the big discrete logarithm we are interested in
 */
+	g:=Integers()!g;
+	h:=Integers()!h;
   	q := (p-1) div 2;
 
 	//////Setting the bound//////
