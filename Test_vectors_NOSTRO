@@ -1,7 +1,4 @@
 
-maxnumber:=2000000;
-TestSolovay:=[Random(maxnumber): _ in [1..3000]];
-
 //primes from "a" to "b"
 a:=50000;
 b:=100000;
