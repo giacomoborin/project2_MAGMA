@@ -59,7 +59,7 @@ procedure test_lehman()
 			"Output:",p, q; //break;
 		end if;
 	end for;
-	pb;
+	"Number of error:",#pb;
 end procedure;
 
 time test_lehman();

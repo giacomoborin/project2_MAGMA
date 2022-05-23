@@ -34,6 +34,7 @@ procedure test_index_calculus()
 			"Error",test;
 		end if;
 	end for;
+	"Number of error:",err;
 end procedure;
 
 "Time for", #TestIndexC, ":";
