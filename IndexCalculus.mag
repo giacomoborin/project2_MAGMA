@@ -22,13 +22,13 @@ function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q)
 
 	// solutions for 2
 	prime:=2;
-	M := Transpose(Matrix( GF(prime), #SeqMatrixOfexponent, dim, SeqMatrixOfexponent ));
-	Sol2 := Solution( M, Vector(GF(prime),VectorOfexponent));
+	M := Transpose(SparseMatrix( GF(prime), #SeqMatrixOfexponent, dim, SeqMatrixOfexponent ));
+	Sol2 := Solution( Matrix(M), Vector(GF(prime),VectorOfexponent));
 
 	// solutions for q = (p-1)/2
 	prime:=q; 
-	M := Transpose(Matrix( GF(prime), #SeqMatrixOfexponent, dim, SeqMatrixOfexponent ));
-	Solq := Solution( M, Vector(GF(prime),VectorOfexponent));
+	M := Transpose(SparseMatrix( GF(prime), #SeqMatrixOfexponent, dim, SeqMatrixOfexponent ));
+	Solq := Solution( Matrix(M), Vector(GF(prime),VectorOfexponent));
 
 	return CRT([Integers()!Sol2[dim], Integers()!Solq[dim]], [2,q]);
 end function;
@@ -46,8 +46,6 @@ function IndexCalculus(p,g,h)
 
   	The idea behind this algorithm is to compute small logarithm (also called index) with linear congruences and from them compute the big discrete logarithm we are interested in
 */
-	g:=Integers()!g;
-	h:=Integers()!h;
   	q := (p-1) div 2;
 
 	//////Setting the bound//////
