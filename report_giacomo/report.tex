@@ -1,4 +1,4 @@
-\documentclass{article}
+\documentclass{report}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -13,9 +13,50 @@
 \usepackage{array}   % for \newcolumntype macro
 % \newcolumntype{C}{>{$}c<{$}} % math-mode version of "C" column type
 %Personal package
-\usepackage{listing}
+\usepackage{listings}
+%\usepackage{lstlang0}
 \usepackage{bm}
 \usepackage{csquotes}
+
+\lstdefinelanguage{magma}{
+   keywords={:=,+:=,-:=,*:=},%
+          % functions
+   procnamekeys={function,func,intrinsic,procedure,proc},%
+         % Booleans
+   morekeywords={true,false},%
+          % relations
+   morekeywords={adj,and,cat,cmpeq,cmpne,diff,div,eq,ge,gt,in,is,join,le,lt,%
+          meet,mod,ne,notadj,notin,notsubset,or,sdiff,subset,xor},%
+          % keywords
+   morekeywords={assigned,break,by,case,catch,continue,declare,default,%
+          delete,do,elif,else,end,eval,exists,exit,for,forall,fprintf,if,local,%
+          not,print,printf,quit,random,read,readi,repeat,restore,save,select,%
+          then,time,to,try,until,vprint,vprintf,vtime,when,where,while},%
+          % directives
+   morekeywords={clear,forward,freeze,iload,import,load},%
+          % error checks
+   morekeywords={assert,assert2,assert3,error,require,requirege,requirerange},%
+          % constructors
+   morekeywords={car,comp,cop,elt,ext,frac,hom,ideal,iso,lideal,loc,map,%
+          ncl,pmap,quo,rec,recformat,rep,rideal,sub},%
+          % other constructors (semi-reserved)
+   morekeywords={AbelianGroup,AdditiveCode,AffineAlgebra,Algebra,%
+          AssociativeAlgebra,Character,CliffordAlgebra,Design,Digraph,%
+          ExtensionField,FPAlgebra,FiniteAffinePlane,FiniteProjectivePlane,%
+          Graph,Group,GroupAlgebra,IncidenceStructure,LieAlgebra,LinearCode,%
+          LinearSpace,MatrixAlgebra,MatrixGroup,MatrixRing,Monoid,%
+          MultiDigraph,MultiGraph,NearLinearSpace,Network,PartialMap,%
+          PermutationGroup,PolycyclicGroup,QuaternionAlgebra,Semigroup,%
+          ZModule},%
+          % functions
+   morekeywords={function,func,intrinsic,procedure,proc,return},%
+      %sensitive,%
+      morecomment={//},%
+      morecomment={/*}{*/},%
+      morecomment={\{}{\}},%
+      morestring={"}%
+  }%[keywords,procnames,comments,strings]%
+%\endinput
 
 %Commands
 \newcommand{\DD}{\mathcal{D}}
