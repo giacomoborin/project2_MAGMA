@@ -1,0 +1,83 @@
+\documentclass{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amssymb,amsmath,amsthm,mathtools} 
+\usepackage{tikz-cd,wrapfig}
+\usepackage{tcolorbox}
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{enumitem}
+\usepackage{pdfsync}
+\usepackage{amstext} % for \text macro
+\usepackage{array}   % for \newcolumntype macro
+% \newcolumntype{C}{>{$}c<{$}} % math-mode version of "C" column type
+%Personal package
+\usepackage{listing}
+\usepackage{bm}
+\usepackage{csquotes}
+
+%Commands
+\newcommand{\DD}{\mathcal{D}}
+\DeclareMathOperator{\sgn}{sgn}
+\newcommand{\WW}{\mathcal{W}}
+\newcommand{\FT}{\mathcal{F}}
+\DeclareMathOperator{\ifff}{\iff}
+
+
+% Theorem definitons 
+\theoremstyle{plain}
+\newtheorem{teo}{Theorem}[section]
+\newtheorem{lem}[teo]{Lemma}
+\newtheorem{prop}[teo]{Proposition}
+\newtheorem{cor}[teo]{Corollary}
+\newtheorem*{form}{Formula}
+
+\theoremstyle{remark}
+\newtheorem{rem}{Remark}
+\newtheorem{rems}[rem]{Remarks}
+
+\theoremstyle{definition}
+\newtheorem{deff}[teo]{Definiton}
+\newtheorem{idea}{Idea}
+\newtheorem*{nota}{Notation}
+
+%Bibliography
+\usepackage[backend=biber, style=alphabetic, maxnames = 8, giveninits=true,isbn=false,eprint=false]{biblatex}
+%other_styles:numeric_authortitle
+\addbibresource{biblio.bib}
+
+
+\usepackage{hyperref}
+
+
+
+\title{Report for the MAGMA project}
+\author{Giacomo Borin}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+	The report contain the implementation of 5 algorithms:
+	\begin{itemize}
+		\item ECDSA, a digital signature scheme based on algebraic curves.
+		\item Pohlig Hellman alorithm for solving discrete logarithm problem for Algebraic curves. Particularly efficient when the base point has order with only small primes in the factorization
+		\item Index Calculus algorithm for solving discrete logarithm problem for in finite fields of prime order using linear algebra and B-smooth sieving.
+		\item Solovay-Strassen primality test, based on the evaluation of the Jacobi Symbol.
+		\item Lehman factorization algorithm, based on a modification of the Fermat factorization algorithm.
+	\end{itemize}
+
+\end{abstract}
+
+
+\section{ECDSA}
+
+%\lstinputlisting{../ECDSA.mag}
+\lstinputlisting{Lehman.mag}
+
+
+
+
+\end{document}
