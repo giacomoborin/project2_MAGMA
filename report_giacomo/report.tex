@@ -81,11 +81,13 @@ We have implemented the algorithm from~\cite[Section 6.6]{washington}.
 \lstinputlisting[language=magma, firstline=17, lastline=38]{../ECDSA.mag}
 \lstinputlisting[language=magma, firstline=41, lastline=60]{../ECDSA.mag}
 
+I've personally implemented all the code and a good part of the test vectors(it didn't took a lot of time), while Dario helped with debugging.
+
 \subsection{Implementation choiches}
 
 - following the washington
 
-It would be faster to use $k = 4$ as Sony, since it simplifies a lot the evaluation of $kG$ (in fact it would require only two doublings) but it would be very bad for security. However I have tried to use again the idea at the commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/1209afbbb3bed86d26ebf342bf6f43453de3e795}{1209afbbb3bed86d26ebf342bf6f43453de3e795},
+It would be faster to use $k = 4$ as Sony, since it simplifies a lot the evaluation of $kG$ (in fact it would require only two doublings) but it would be very bad for security. However I have tried to use again the idea at the commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/1209afbbb3bed86d26ebf342bf6f43453de3e795}{1209afb}.
 
 Some evaluation can be seen in the \href{https://github.com/giacomoborin/project2_MAGMA/pull/36}{associated pull request}.
 
@@ -105,6 +107,46 @@ Time: 4.230
 
 Another simple idea is to evaluate only once the inverse of $s$, it saves only $0.1$ seconds, but it is still worth it (you can see more on \href{https://github.com/giacomoborin/project2_MAGMA/issues/13}{the relative issue on github}).
 
+\section{Pohlig-Hellman}
+
+\section{Index Calculus}
+
+\subsection{Implementation}
+
+Dario had done the first implementation, but there was a problem: not every solution of the linear system gives the discrete logarithm. We can solve in two ways:
+\begin{itemize}
+	\item Removing columns with all zeros \href{https://github.com/giacomoborin/project2_MAGMA/pull/30/commits/4b0b67d0dcbe51f01058c64a06a1c39fdb5cf56e}{4b0b67d}
+	\item Inserting a check, if not passed try adding more equations \href{https://github.com/giacomoborin/project2_MAGMA/pull/30/commits/e17fe016088c6746c46d52d7154922060f8e5366}{e17fe01}
+\end{itemize}
+
+
+
+Using append bad \href{https://github.com/giacomoborin/project2_MAGMA/commit/d12863968fe66504486fa7fea78929ab2aa98f43}{d128639}. 
+
+\subsubsection{B-smoothing}
+
+Mathematically it should be better to proceed in different ways, as done in the commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/80399ac928cf19e009451f174adc4138283580f2}{80399ac}. Sadly it is too slow (MAGMA mistery).
+
+
+
+\section{Solovay-Strassen}
+
+
+To evaluate the Jacobi Symbol we don't have to use the factorization! A possible way to implement it is inserted in the file (commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/aa03960b86ec942f5f35c55e297850a3e2b2beba}{aa03960}.
+
+Obviously using sequence is bad for MAGMA, so I've written a sligtly faster version in commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/2ffe332f8ee782b20a079694f1c1cf9363aae3d0}{2ffe332}.
+
+
+However the function \verb|JacobiSymbol| is by far the more efficient thing possible in MAGMA today and for our skills. 
+
+
+\section{Lehman}
+
+\appendix
+
+\section{How to use Github}
+
+Some tips to navigate Github properly. 
 
 \newpage
 \printbibliography
