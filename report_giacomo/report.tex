@@ -1,4 +1,4 @@
-\documentclass{report}
+\documentclass{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -14,49 +14,10 @@
 % \newcolumntype{C}{>{$}c<{$}} % math-mode version of "C" column type
 %Personal package
 \usepackage{listings}
-%\usepackage{lstlang0}
+\usepackage{lstlang0}
 \usepackage{bm}
 \usepackage{csquotes}
 
-\lstdefinelanguage{magma}{
-   keywords={:=,+:=,-:=,*:=},%
-          % functions
-   procnamekeys={function,func,intrinsic,procedure,proc},%
-         % Booleans
-   morekeywords={true,false},%
-          % relations
-   morekeywords={adj,and,cat,cmpeq,cmpne,diff,div,eq,ge,gt,in,is,join,le,lt,%
-          meet,mod,ne,notadj,notin,notsubset,or,sdiff,subset,xor},%
-          % keywords
-   morekeywords={assigned,break,by,case,catch,continue,declare,default,%
-          delete,do,elif,else,end,eval,exists,exit,for,forall,fprintf,if,local,%
-          not,print,printf,quit,random,read,readi,repeat,restore,save,select,%
-          then,time,to,try,until,vprint,vprintf,vtime,when,where,while},%
-          % directives
-   morekeywords={clear,forward,freeze,iload,import,load},%
-          % error checks
-   morekeywords={assert,assert2,assert3,error,require,requirege,requirerange},%
-          % constructors
-   morekeywords={car,comp,cop,elt,ext,frac,hom,ideal,iso,lideal,loc,map,%
-          ncl,pmap,quo,rec,recformat,rep,rideal,sub},%
-          % other constructors (semi-reserved)
-   morekeywords={AbelianGroup,AdditiveCode,AffineAlgebra,Algebra,%
-          AssociativeAlgebra,Character,CliffordAlgebra,Design,Digraph,%
-          ExtensionField,FPAlgebra,FiniteAffinePlane,FiniteProjectivePlane,%
-          Graph,Group,GroupAlgebra,IncidenceStructure,LieAlgebra,LinearCode,%
-          LinearSpace,MatrixAlgebra,MatrixGroup,MatrixRing,Monoid,%
-          MultiDigraph,MultiGraph,NearLinearSpace,Network,PartialMap,%
-          PermutationGroup,PolycyclicGroup,QuaternionAlgebra,Semigroup,%
-          ZModule},%
-          % functions
-   morekeywords={function,func,intrinsic,procedure,proc,return},%
-      %sensitive,%
-      morecomment={//},%
-      morecomment={/*}{*/},%
-      morecomment={\{}{\}},%
-      morestring={"}%
-  }%[keywords,procnames,comments,strings]%
-%\endinput
 
 %Commands
 \newcommand{\DD}{\mathcal{D}}
@@ -115,10 +76,38 @@
 
 \section{ECDSA}
 
-%\lstinputlisting{../ECDSA.mag}
-\lstinputlisting{Lehman.mag}
+We have implemented the algorithm from~\cite[Section 6.6]{washington}.
+
+\lstinputlisting[language=magma, firstline=17, lastline=38]{../ECDSA.mag}
+\lstinputlisting[language=magma, firstline=41, lastline=60]{../ECDSA.mag}
+
+\subsection{Implementation choiches}
+
+- following the washington
+
+It would be faster to use $k = 4$ as Sony, since it simplifies a lot the evaluation of $kG$ (in fact it would require only two doublings) but it would be very bad for security. However I have tried to use again the idea at the commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/1209afbbb3bed86d26ebf342bf6f43453de3e795}{1209afbbb3bed86d26ebf342bf6f43453de3e795},
+
+Some evaluation can be seen in the \href{https://github.com/giacomoborin/project2_MAGMA/pull/36}{associated pull request}.
+
+\begin{lstlisting}[language = magma]
+> load "ECDSA.mag"; // k random
+Loading "ECDSA.mag"
+> load "Test_ECDSA.mag";
+Loading "Test_ECDSA.mag"
+Time: 6.130
+> load "ECDSA.mag"; // k = 4    
+Loading "ECDSA.mag"
+> load "Test_ECDSA.mag";
+Loading "Test_ECDSA.mag"
+Time: 4.230
+\end{lstlisting}
 
 
+Another simple idea is to evaluate only once the inverse of $s$, it saves only $0.1$ seconds, but it is still worth it (you can see more on \href{https://github.com/giacomoborin/project2_MAGMA/issues/13}{the relative issue on github}).
+
+
+\newpage
+\printbibliography
 
 
 \end{document}
