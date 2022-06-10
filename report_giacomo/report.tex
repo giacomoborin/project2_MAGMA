@@ -24,7 +24,7 @@
 \DeclareMathOperator{\sgn}{sgn}
 \newcommand{\WW}{\mathcal{W}}
 \newcommand{\FT}{\mathcal{F}}
-\DeclareMathOperator{\eqb}{=}
+\DeclareMathOperator*{\eqb}{=}
 \DeclareMathOperator{\ifff}{\iff}
 
 
@@ -125,7 +125,11 @@ Another simple idea is to evaluate only once the inverse of $s$, it saves only $
 \section{Pohlig-Hellman}
 
 The Pohlig-Hellman method is an algorithm for the evaluation of the discrete logarithm %with base element of finite order
-, i.e. given $P$ and $Q$ in a group $G$ (written with additive notation and neutral element $O$) such that $P$ has finite order $N$ and exists $k\in \{0,...,N-1\}$ such that $kP = Q$ the algorithm finds $k$. 
+, i.e. given $P$ and $Q$ in a group $G$ such that $P$ has finite order $N$ and exists $k\in \{0,...,N-1\}$ such that $kP = Q$ the algorithm finds $k$. 
+
+\begin{nota}
+	I will use additive notation for the group operation with neutral element $O$ since we are requested to implement this algorithm for solving discrete logarithm for Elliptic Curves. 
+\end{nota}
 
 \begin{idea} \label{idea:ecdlp}
 	Consider the factorization:
@@ -163,16 +167,21 @@ Obviously the procedure terminates, but we still need to prove that the step \re
 		\label{eq:prop:base}
 		\frac{N}{p^{0+1}}Q_0 = \frac{N}{p}\hat{k}_0 P + N(\hat{k}_1 + \hat{k}_2p + ...)P \eqb^* \frac{N}{p}k_0 P + O = \hat{k}_0 \frac{N}{p} P
 	\end{equation}
-	where in $*$ we have used that $NP = O$. Since $j$ from step \ref{enum:while} is in $\{0,...,p-1\}$ we have $\hat{k}_0 = j = k_0$.
+	where in $*$ we have used that $NP = O$. Observe that $p$ divides $N$. Since $j$ from step \ref{enum:while} is in $\{0,...,p-1\}$ we have $\hat{k}_0 = j = k_0$.
 
 	\textbf{Induction step}: prove the result for $i \in \{1,...,e-1\}$ assuming that it holds for $i-1$. 
 
 	By the step \ref{enum:if} we have that:
 	\begin{multline*}
-		Q_i := Q_{i-1} - k_{i-1} p^{i-1}P = (\text{induction on }i-1) \\
-		= (\hat{k}_{i-1}p^{i-1} + \hat{k}_{i}p^{i} + ... )P - k_{i-1} p^{i-1}P = (\hat{k}_ip^i + \hat{k}_{i+1}p^{i+1} + ... )P
-	\end{multline*}	
-	
+		Q_i := Q_{i-1} - k_{i-1} p^{i-1}P = (\text{induction on }i-1\text{ for } k_{i-1} \text{ and } Q_{i-1}) \\
+		= (\hat{k}_{i-1}p^{i-1} + \hat{k}_{i}p^{i} + ... )P - \hat{k}_{i-1} p^{i-1}P = (\hat{k}_ip^i + \hat{k}_{i+1}p^{i+1} + ... )P.
+	\end{multline*}
+	So we can evaluate $R$ :
+	\begin{multline*}
+		\frac{N}{p^{i+1}}Q_i = \frac{N}{p^{i+1}}(\hat{k}_ip^i + \hat{k}_{i+1}p^{i+1} + ... )P = \\
+		= \hat{k}_i \frac{N}{p} P + N(\hat{k}_{i+1} + \hat{k}_{i+1}p + ...)P= \hat{k}_i \frac{N}{p} P + O = \hat{k}_i \frac{N}{p} P 
+	\end{multline*}
+	So in the same way $\hat{k}_i = j = k_i$. Observe that these are the same calculation of the base case and also we have that $p^{i+1}$ divides $N$ since $i<e$. 
 \end{proof}
 
 Trivially it follows that:
@@ -180,6 +189,31 @@ Trivially it follows that:
 \begin{cor}
 	The result in step \ref{enum:final_dlp} is correct.
 \end{cor}
+
+So to find the discrete logarithm we only have to repeat the previous steps for each $p_i^{e_i}$. We can then solve the system 
+\[
+	k \mod p_i^{e_i} \quad \text{ for } i=1,...,r
+\]
+using the Chinese Reminder Theorem and get the desired $k \in \{0,...,N-1\}$. 
+
+The strenght of this algorithm is that we are performing the discrete logarithm by linear search $\sum e_i$ times in sets of cardinality $p_i$ (having then a complexity of $O(e_j p_j)$ where $p_j$ is the greatest prime factor) instead of one time for all the $N$ values in $\left< P \right>$. So obviously if the factors of $N$ are small we obtain a result much better than $O(\sqrt{N})$ of other general algorithms (like Shanks or Pollard-Rho). 
+
+For the description (and implementation) of the algorithm I have used \linebreak
+\cite[Section 5.2.3]{washington} and \cite[Section 7.2.3]{stinson} (written in multiplicative notation and with a more costructive description). 
+
+\subsection{Implementation}
+
+MAGMA rules: Factorization, CRT, IsPrimitive, EllipticCurves
+
+
+Naive version and maps bad!
+
+
+Distinguish case $e = 1$.
+
+
+Use that doubling is faster than adding 
+
 
 \section{Index Calculus}
 
