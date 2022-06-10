@@ -24,6 +24,7 @@
 \DeclareMathOperator{\sgn}{sgn}
 \newcommand{\WW}{\mathcal{W}}
 \newcommand{\FT}{\mathcal{F}}
+\DeclareMathOperator{\eqb}{=}
 \DeclareMathOperator{\ifff}{\iff}
 
 
@@ -71,6 +72,20 @@
 		\item Lehman factorization algorithm, based on a modification of the Fermat factorization algorithm.
 	\end{itemize}
 
+	The requests for the report are:
+
+
+	Assuming that a team has passed the first phase, then each team member must submit an individual report on the project. The report must be written in English and not more than 15 pages.
+	The report must include the following:
+	\begin{itemize}
+		\item your personal contribution to the team project (0-2 points)
+		\item a complete overview of the mathematical problems behind the algorithms (0-4
+points)
+		\item an in-depth explanation of the implementative choices (0-4 points)
+	\end{itemize}
+	You must also submit the code of the project. This may include some improvements that you personally added after the project submission.
+
+
 \end{abstract}
 
 
@@ -109,6 +124,63 @@ Another simple idea is to evaluate only once the inverse of $s$, it saves only $
 
 \section{Pohlig-Hellman}
 
+The Pohlig-Hellman method is an algorithm for the evaluation of the discrete logarithm %with base element of finite order
+, i.e. given $P$ and $Q$ in a group $G$ (written with additive notation and neutral element $O$) such that $P$ has finite order $N$ and exists $k\in \{0,...,N-1\}$ such that $kP = Q$ the algorithm finds $k$. 
+
+\begin{idea} \label{idea:ecdlp}
+	Consider the factorization:
+\begin{equation*}
+	N = \prod_{i=1}^r p_i^{e_i}.
+\end{equation*}
+	Solve now the discrete logarithm modulo $p_i^{e_i}$ for all $i = 1,...,r$ and use these values to evaluate $k$ using the Chinese Reminder Theorem. 
+\end{idea}
+
+Let's see a first naive version of the strategy\footnote{I know that this is indeed very similiar to a real code, but for me it is easier to understand} for finding $k \,\text{mod}\, p^e$:
+\begin{enumerate}
+	\item Compute $T = \{ (j,j\left(\frac{N}{p}P\right)) \,|\, j = 0,...,q-1 \}$.
+	\item Assign $i := 0$, $Q_0 := Q$
+	\item \label{enum:while} find $(j,R)\in T$ such that $R = \frac{N}{p^{i+1}}Q_i$ and assign $k_i := j$
+	\item Increment $i := i + 1$, then:
+	\item \label{enum:if} If $i < e$ assign $Q_i := Q_{i-1} - k_{i-1} p^{i-1}P$ and return to step \ref{enum:while}
+	\item Then we have $k \equiv k_0 + k_1p + ... + k_{e-1}p^{e-1} \mod q^e$ \label{enum:final_dlp}.
+\end{enumerate}
+
+Obviously the procedure terminates, but we still need to prove that the step \ref{enum:final_dlp} is correct.
+
+\begin{prop}
+	\label{prop:corr_dlp}
+	Consider $k$ written in base $p$ as $k = \hat{k}_0 + \hat{k}_1p + \hat{k}_2p^2 + ...$, then we have that:
+
+	for each $i \in \{0,...,e-1\}$ at the step \ref{enum:while} hold that 
+	$\hat{k}_i = k_i$ and $Q_i = (\hat{k}_ip^i + \hat{k}_{i+1}p^{i+1} + ... )P$
+\end{prop}
+
+\begin{proof}
+	We will prove this by induction on $i \in \{ 0 ,..., e-1\}$.
+
+	\textbf{Base case}: $i=0$. Trivially we have that $Q_0 = Q = kP = (\hat{k}_0 + \hat{k}_1p + \hat{k}_2p^2 + ...)P$. Observe now that:
+	\begin{equation}
+		\label{eq:prop:base}
+		\frac{N}{p^{0+1}}Q_0 = \frac{N}{p}\hat{k}_0 P + N(\hat{k}_1 + \hat{k}_2p + ...)P \eqb^* \frac{N}{p}k_0 P + O = \hat{k}_0 \frac{N}{p} P
+	\end{equation}
+	where in $*$ we have used that $NP = O$. Since $j$ from step \ref{enum:while} is in $\{0,...,p-1\}$ we have $\hat{k}_0 = j = k_0$.
+
+	\textbf{Induction step}: prove the result for $i \in \{1,...,e-1\}$ assuming that it holds for $i-1$. 
+
+	By the step \ref{enum:if} we have that:
+	\begin{multline*}
+		Q_i := Q_{i-1} - k_{i-1} p^{i-1}P = (\text{induction on }i-1) \\
+		= (\hat{k}_{i-1}p^{i-1} + \hat{k}_{i}p^{i} + ... )P - k_{i-1} p^{i-1}P = (\hat{k}_ip^i + \hat{k}_{i+1}p^{i+1} + ... )P
+	\end{multline*}	
+	
+\end{proof}
+
+Trivially it follows that:
+
+\begin{cor}
+	The result in step \ref{enum:final_dlp} is correct.
+\end{cor}
+
 \section{Index Calculus}
 
 \subsection{Implementation}
@@ -144,9 +216,6 @@ However the function \verb|JacobiSymbol| is by far the more efficient thing poss
 
 \appendix
 
-\section{How to use Github}
-
-Some tips to navigate Github properly. 
 
 \newpage
 \printbibliography
