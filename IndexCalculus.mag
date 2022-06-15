@@ -67,16 +67,16 @@ function IndexCalculus(p,g,h)
 	SeqMatrixOfexponent:=[]; //this will hold all the exponents of the factorization of g^i in B
 
 	//////Looking for g^exponent s.t. it is B-smooth and setting variables//////
-	exponent:=Random(2,p-2);
 	rows := 0;
 	/*We tried some choice of bound_rows and bound_new_rows
 	and bound_rows:=Floor((#B)*(0.78)); and bound_new_rows:=Floor((#B)*(0.32)); have good chance to be good values of the parameters
 	*/
 	bound_rows := Floor((#B)*(0.78));
-	new_rows := 0;
 	bound_new_rows :=Floor((#B)*(0.32));
 	repeat
+		new_rows := 0;
 		repeat 
+			exponent:=Random(2,p-2);
 			FactorsOfgtoexponents:=Factorization((h*Modexp(g,-exponent,p)) mod p);
 			//////Checking the B-smoot property//////
 			if [FactorsOfgtoexponents[i][1]: i in [1..#FactorsOfgtoexponents]] subset B then
@@ -89,11 +89,10 @@ function IndexCalculus(p,g,h)
 				rows+:=1;
 				new_rows+:=1;
 			end if;
-			exponent:=Random(2,p-2);
 		until (rows gt bound_rows) and (new_rows gt bound_new_rows);
-		new_rows := 0;
 		sol := SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q);
   	until Modexp(g,sol,p) eq h;
 	return sol;
 end function;
 
+load "Test_IndexCalculus.mag";
