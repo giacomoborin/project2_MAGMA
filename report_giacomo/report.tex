@@ -21,6 +21,8 @@
 
 %Commands
 \newcommand{\DD}{\mathcal{D}}
+\newcommand{\ZZ}{\mathbb{Z}}
+\newcommand{\PP}{\mathbb{P}}
 \DeclareMathOperator{\sgn}{sgn}
 \newcommand{\WW}{\mathcal{W}}
 \newcommand{\FT}{\mathcal{F}}
@@ -39,10 +41,13 @@
 \theoremstyle{remark}
 \newtheorem{rem}{Remark}
 \newtheorem{rems}[rem]{Remarks}
+\newtheorem{idea}[rem]{Idea}
+
 
 \theoremstyle{definition}
 \newtheorem{deff}[teo]{Definiton}
-\newtheorem{idea}{Idea}
+\newtheorem{algo}[teo]{Algorithm}
+\newtheorem{prob}[teo]{Problem}
 \newtheorem*{nota}{Notation}
 
 %Bibliography
@@ -88,13 +93,14 @@ points)
 
 \end{abstract}
 
+\subsection*{General considerations}
+
+In general functions already implemented in MAGMA are significantly faster than ours, so when possible we have used them. 
+
 
 \section{ECDSA}
 
 We have implemented the algorithm from~\cite[Section 6.6]{washington}.
-
-\lstinputlisting[language=magma, firstline=17, lastline=38]{../ECDSA.mag}
-\lstinputlisting[language=magma, firstline=41, lastline=60]{../ECDSA.mag}
 
 I've personally implemented all the code and a good part of the test vectors(it didn't took a lot of time), while Dario helped with debugging.
 
@@ -106,18 +112,18 @@ It would be faster to use $k = 4$ as Sony, since it simplifies a lot the evaluat
 
 Some evaluation can be seen in the \href{https://github.com/giacomoborin/project2_MAGMA/pull/36}{associated pull request}.
 
-\begin{lstlisting}[language = magma]
-> load "ECDSA.mag"; // k random
-Loading "ECDSA.mag"
-> load "Test_ECDSA.mag";
-Loading "Test_ECDSA.mag"
-Time: 6.130
-> load "ECDSA.mag"; // k = 4    
-Loading "ECDSA.mag"
-> load "Test_ECDSA.mag";
-Loading "Test_ECDSA.mag"
-Time: 4.230
-\end{lstlisting}
+%\begin{lstlisting}[language = magma]
+%> load "ECDSA.mag"; // k random
+%Loading "ECDSA.mag"
+%> load "Test_ECDSA.mag";
+%Loading "Test_ECDSA.mag"
+%Time: 6.130
+%> load "ECDSA.mag"; // k = 4    
+%Loading "ECDSA.mag"
+%> load "Test_ECDSA.mag";
+%Loading "Test_ECDSA.mag"
+%Time: 4.230
+%\end{lstlisting}
 
 
 Another simple idea is to evaluate only once the inverse of $s$, it saves only $0.1$ seconds, but it is still worth it (you can see more on \href{https://github.com/giacomoborin/project2_MAGMA/issues/13}{the relative issue on github}).
@@ -140,14 +146,20 @@ The Pohlig-Hellman method is an algorithm for the evaluation of the discrete log
 \end{idea}
 
 Let's see a first naive version of the strategy\footnote{I know that this is indeed very similiar to a real code, but for me it is easier to understand} for finding $k \,\text{mod}\, p^e$:
-\begin{enumerate}
-	\item Compute $T = \{ (j,j\left(\frac{N}{p}P\right)) \,|\, j = 0,...,q-1 \}$.
-	\item Assign $i := 0$, $Q_0 := Q$
-	\item \label{enum:while} find $(j,R)\in T$ such that $R = \frac{N}{p^{i+1}}Q_i$ and assign $k_i := j$
-	\item Increment $i := i + 1$, then:
-	\item \label{enum:if} If $i < e$ assign $Q_i := Q_{i-1} - k_{i-1} p^{i-1}P$ and return to step \ref{enum:while}
-	\item Then we have $k \equiv k_0 + k_1p + ... + k_{e-1}p^{e-1} \mod q^e$ \label{enum:final_dlp}.
-\end{enumerate}
+
+\begin{algo}\label{algo:ecdlp_naive}
+
+	\begin{enumerate}
+		\item \label{enum:store} Compute $T = \{ (j,j\left(\frac{N}{p}P\right)) \,|\, j = 0,...,q-1 \}$.
+		\item Assign $i := 0$, $Q_0 := Q$
+		\item \label{enum:while} find $(j,R)\in T$ such that $R = \frac{N}{p^{i+1}}Q_i$ and assign $k_i := j$
+		\item Increment $i := i + 1$, then:
+		\item \label{enum:if} If $i < e$ assign $Q_i := Q_{i-1} - k_{i-1} p^{i-1}P$ and return to step \ref{enum:while}
+		\item Then we have $k \equiv k_0 + k_1p + ... + k_{e-1}p^{e-1} \mod q^e$ \label{enum:final_dlp}.
+	\end{enumerate}
+
+\end{algo}
+
 
 Obviously the procedure terminates, but we still need to prove that the step \ref{enum:final_dlp} is correct.
 
@@ -203,16 +215,53 @@ For the description (and implementation) of the algorithm I have used \linebreak
 
 \subsection{Implementation}
 
-MAGMA rules: Factorization, CRT, IsPrimitive, EllipticCurves
+For now on I will use the same notation used in the code of\\ \texttt{ECDLP}\verb|_|\texttt{PohligHellman(q, E, P, r, Q)}.
 
+Let's start with considering what we have \textbf{not} implemented, i.e. the functions already contatined in MAGMA that we have decided to use since they are more efficient:
+\begin{itemize}
+	\item \verb|Factorization|, necessary to factor the order of the point \verb|r|
+	\item \verb|CRT|, that at the end evaluate the solution of the system modulo \verb|r| of congruences resulting after the for loop.
+	\item \verb|IsPrimitive|, I will explain later why we need it.
+	\item The \verb|EllipticCurve| \href{http://magma.maths.usyd.edu.au/magma/handbook/elliptic_curves}{structure} and all its functions (in particular the sum and the doubling). 
+\end{itemize}
 
-Naive version and maps bad!
+The first working implementation (\href{https://github.com/giacomoborin/project2_MAGMA/blob/2416fa58ca58ef91075fc4a52427d68a5fa182c1/ECDLP.mag}{2416fa5}) of the code followed step by step the Algorithm \ref{algo:ecdlp_naive}. It was very slow because of two principal reasons:
+\begin{enumerate}
+	\item \label{enum:append} Extensive use of the command \verb|Append|, slow since memory allocation for sequences is expensive, particularly in MAGMA.
+	\item \label{enum:map} The use of the command \texttt{map<|>}, similiar to the dictionary in Python, but sadly not efficient in MAGMA. 
+\end{enumerate}
+The second command was used to perform the steps \ref{enum:store} and \ref{enum:while} of the procedure, that we have individuated as the most time consuming parts of the method:
 
+\begin{prob}[Evaluation]
+	Evaluate and store all the values $\{ (j,j\left(\frac{N}{p}P\right)) \,|\, j = 0,...,q-1 \}$ (step \ref{enum:store}). In the code $\frac{N}{p}P$ is \verb|coeffP|. 
+\end{prob}
 
-Distinguish case $e = 1$.
+\begin{prop}[Search]
+	Search into the evaluated points and return the corresponding index (step \ref{enum:while})
+\end{prop}
 
+To solve these problems I have observed that we can consider two different cases: $e=1$ and $e>1$ (where $e$ is the exponent of the prime in the factorization).
 
-Use that doubling is faster than adding 
+\subsection{Case e=1}
+Here we can solve the two problems togheter perferming in parallel the evaluation of \verb|j*coeffP| while checking if it is equal to \verb|Qs|. In this way we the memory allocation is negligible and we will need on average \verb|prime|$/2$ operations. 
+
+Let's look more in details to the implementation choices in this case. Obviously we start evaluating \texttt{Qs} (corresponding to $\frac{N}{r}Q$). If it is the infinity point we return directly \verb|k|$=k_0 = 0$ otherwhise we distinguish two other cases. 
+
+In the second one we do the simple evaluation starting from $k = 1$ and $\verb|Point| = \verb|coeffP|$, then increment $k$ by $1$ and \verb|Point| by \verb|coeffP| until we find \verb|Point eq Qs|.
+
+In the first we look if $2$ is primitive in $\mathbb{Z}_p$, in this way to get all the multiples of \verb|coeffP| we can evaluate instead $2^j\verb|coeffP|$ for $j = 0, ..., p-2$. 
+
+So insted of incrementing $k$ we multiply it by $2 \mod p$ and we double \verb|Point|, that is sligtly faster with respect to adding points. (commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/d2d2692170bebfa2b465307761de5c7ee52121bf}{d2d2692})
+
+\subsection{Case e>1}
+
+In this case we go straight with the computation and the storing of points. The only two improvements added where the pre-initialization of the array \verb|T| to reduce new memory allocation and the use of the function \verb|Position| to find the index.
+
+Observe that also \verb|K| and \verb|Qs| where pre-initilized with buffer values. 
+
+\begin{rem} %TODO
+	Doing log insted of the search good, but forbidden
+\end{rem}
 
 
 \section{Index Calculus}
@@ -236,6 +285,44 @@ Mathematically it should be better to proceed in different ways, as done in the 
 
 
 \section{Solovay-Strassen}
+
+The Solovay-Strassen test is a primality test based on the Euler's criterion:
+\begin{teo}\label{teo:eu_quad}
+	If $p$ is a prime integer, than for any integer $a \in \ZZ$ we have:
+	\[ a^{\frac{p-1}{2}} \equiv \left(\dfrac{a}{p}\right) \mod p \]
+\end{teo}
+
+The term on the right is the Legendre Symbol, that is equal to $0$ if $p$ divides $a$, to $1$ if it is a quadratic residue modulo $p$\footnote{if exists $b$ integer such that $a \equiv b^2 \mod p$} and $-1$ otherwhise. The generalization of the Legendre Symbol for all integers $n = p_1^{e_1} \cdots p_r^{e_r}$ is the Jacobi Symbol: 
+
+\[ \left(\dfrac{a}{n}\right) := \left(\dfrac{a}{p_1}\right)^{e_1} \cdots \left(\dfrac{a}{p_r}\right)^{e_r} \] 
+	
+Since for general composite integers the theorem \ref{teo:eu_quad} won't always hold we can exploit this for a primality test. Given an odd integer $n$ the idea is to evaluate the two terms on a random integer $a\in \{2,...,n-1\}$ separately, see if they are equal, if no then $n$ is composite, otherwhise we change $a$ and repeat. We can conclude that $n$ is composite also if the Jacobi Symbol is equal to $0$, in fact this would imply that exists a prime $p_i$ dividing $a<n$ and $n$, so $n$ has a proper factor. 
+
+\begin{prob}\label{prob:jacobi}
+	How do we evaluate the Jacobi Symbol without knowing the factorization of $n$?
+\end{prob}
+
+\begin{prob}\label{prob:eff_ss}
+	What is the probability for a composite number to pass the test $m$ times?
+\end{prob}
+
+It is possible to prove that no composite number pass the test for all $a\in\{0,...,n-1\}$ and in particular it fails in at least $1/2$ of them. So we have that 
+\begin{equation}
+	\label{eq:prob_SS}
+\PP(n \text{ pass the SS test }m\text{ times}|n\text{ is composite})\leq \frac{1}{2^m} .
+\end{equation}
+Observe that what we want is $\PP(n\text{ is composite}|n \text{ pass the SS test }m\text{ times})$, but it is possible to use Bayes' theorem to compute:
+\begin{equation}
+	\label{eq:prob_SS_good}
+	\PP(n\text{ is composite}|n \text{ pass the SS test }m\text{ times})
+	\leq
+	\frac{\log(n) - 2}{\log(n) - 2 + 2^{m+1}}
+\end{equation}
+
+You can see the proof of this at page 208 of \cite[Section 6.4.2]{stinson}.
+
+In our implementation we repeat the test $m=10$ times and the test vectors are integers $n \approx 2^20 \approx e^{13.9}$, se we get a pseudoprime with probability:
+
 
 
 To evaluate the Jacobi Symbol we don't have to use the factorization! A possible way to implement it is inserted in the file (commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/aa03960b86ec942f5f35c55e297850a3e2b2beba}{aa03960}.
