@@ -242,3 +242,24 @@ procedure test_solovay_strassen()
 end procedure;
 
 time test_solovay_strassen();
+
+function r_odd_composite()
+	repeat 
+		r := Random(2^10,2^20);
+	until r mod 2 eq 1 and not IsPrime(r);
+	return r;
+end function;
+
+procedure test_solovay_strassen_realprob()
+	i := 0;
+	repeat
+		i+:=1;
+		test := r_odd_composite();
+		if i mod 10^10 eq 0 then
+			"step  ",i;
+		end if;
+	until SolovayStrassen(test);
+	"counter example after ",i;
+end procedure;
+
+
