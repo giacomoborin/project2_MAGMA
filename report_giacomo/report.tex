@@ -296,7 +296,7 @@ The term on the right is the Legendre Symbol, that is equal to $0$ if $p$ divide
 
 \[ \left(\dfrac{a}{n}\right) := \left(\dfrac{a}{p_1}\right)^{e_1} \cdots \left(\dfrac{a}{p_r}\right)^{e_r} \] 
 	
-Since for general composite integers the theorem \ref{teo:eu_quad} won't always hold we can exploit this for a primality test. Given an odd integer $n$ the idea is to evaluate the two terms on a random integer $a\in \{2,...,n-1\}$ separately, see if they are equal, if no then $n$ is composite, otherwhise we change $a$ and repeat. We can conclude that $n$ is composite also if the Jacobi Symbol is equal to $0$, in fact this would imply that exists a prime $p_i$ dividing $a<n$ and $n$, so $n$ has a proper factor. 
+Since for general composite integers the theorem \ref{teo:eu_quad} won't always hold we can exploit this for a primality test. Given an odd integer $n$ the idea is to evaluate the two terms on a random integer $a\in \{2,...,n-1\}$ separately, see if they are equal, if no then $n$ is composite, otherwhise we change $a$ and repeat. We can conclude that $n$ is composite also if the Jacobi Symbol is equal to $0$, in fact this would imply that exists a prime $p_i$ dividing $a<n$ and $n$, so $n$ has a proper factor (in common with $a$). 
 
 \begin{prob}\label{prob:jacobi}
 	How do we evaluate the Jacobi Symbol without knowing the factorization of $n$?
@@ -322,15 +322,33 @@ Observe that what we want is $\PP(n\text{ is composite}|n \text{ pass the SS tes
 You can see the proof of this at page 208 of \cite[Section 6.4.2]{stinson}.
 
 In our implementation we repeat the test $m=10$ times and the test vectors are integers $n \approx 2^20 \approx e^{13.9}$, se we get a pseudoprime with probability:
+\begin{equation*}
+	\leq frac{13.9 - 2}{13.9 - 2 + 2^{11}} \approx 0.00577
+\end{equation*}
 
+Is likely that the real probability is less, since I was unable to find a counter example.
 
+So we have partially solved problem \ref{prob:eff_ss}, we focus now on problem \ref{prob:jacobi}. In the code I have solved this problem using the native MAGMA function \texttt{JacobiSymbol}, clearly very fast, but I want however to show a simple way to evaluate it (also implemented in the file, but not used) without the factorization to prove we can solve problem \ref{prob:jacobi}.
 
-To evaluate the Jacobi Symbol we don't have to use the factorization! A possible way to implement it is inserted in the file (commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/aa03960b86ec942f5f35c55e297850a3e2b2beba}{aa03960}.
+The idea is to use some of the properties of the Jacobi Symbol (inherited from the corresponding ones of the Legendre Symbol) to reduce the problem to it's evaluation on $0$, $1$ (trivial) and $2$. I insert the property in the order in which they are used. 
+\begin{enumerate}
+	\item We can evaluate $ \left(\dfrac{2}{n}\right) $ as $1$ for $n\equiv \pm 1 \mod 8$ and $-1$ otherwhise. Also we have $ \left(\dfrac{ac}{n}\right) = \left(\dfrac{a}{n}\right)  \left(\dfrac{c}{n}\right) $. So if $a = 2^km$ (with $m$ odd) we have that:
+	\begin{itemize}
+		\item $\left(\dfrac{a}{n}\right) = \left(\dfrac{m}{n}\right)$ for $k$ even or $n\equiv \pm 1 \mod 8$ 
+		\item $\left(\dfrac{a}{n}\right) = -\left(\dfrac{m}{n}\right)$ otherwhise
+	\end{itemize}
+	\item $\left(\dfrac{a}{n}\right) = - \left(\dfrac{n}{a}\right)$ for $m \equiv n \equiv 3 \mod 4$ and $\left(\dfrac{m}{n}\right) = \left(\dfrac{n}{m}\right)$ otherwhise
+	\item $\left(\dfrac{a}{n}\right) = \left(\dfrac{a \mod n}{n}\right)$
+\end{enumerate}
 
-Obviously using sequence is bad for MAGMA, so I've written a sligtly faster version in commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/2ffe332f8ee782b20a079694f1c1cf9363aae3d0}{2ffe332}.
+We repeat these steps until $a\in\{0,1\}$ memorizing the sign changes. We then return the sign if $a=1$, and $0$ otherwhise.
 
+Since the case in which we return $0$ is equivalent to $a$ having a common factor we can avoid calculation verifying in advance if $\gcd(a,n) \neq 1$, eventually returning $0$. 
 
-However the function \verb|JacobiSymbol| is by far the more efficient thing possible in MAGMA today and for our skills. 
+\subsection{Final remark on the implementation}
+
+There isn't much more to say with respect to the implementation, in fact the only two expensive part are the evalutations of the Jacobi Symbol (very efficient using the native function) and of $a^{\frac{n-1}{2}} \mod n$ (done with \texttt{Modexp}). All the other changes that I have tried, for example the way to check $x\equiv y \mod n$, didn't improve the time.  
+
 
 
 \section{Lehman}
