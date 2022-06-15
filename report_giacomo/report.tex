@@ -26,6 +26,8 @@
 \DeclareMathOperator{\sgn}{sgn}
 \newcommand{\WW}{\mathcal{W}}
 \newcommand{\FT}{\mathcal{F}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\BB}{\mathcal{B}}
 \DeclareMathOperator*{\eqb}{=}
 \DeclareMathOperator{\ifff}{\iff}
 
@@ -266,21 +268,105 @@ Observe that also \verb|K| and \verb|Qs| where pre-initilized with buffer values
 
 \section{Index Calculus}
 
-\subsection{Implementation}
+The Index Calculus is a method based on linear algebra to solve the discrete logarithm problem in the finite prime fields, i.e. given a generator $g$ and an element $h$ in $ \F_p$ find $x \in \ZZ$ such that $g^x = h$. 
 
-Dario had done the first implementation, but there was a problem: not every solution of the linear system gives the discrete logarithm. We can solve in two ways:
+The idea is to fix a factor base $\mathcal{B}$ of primes and find linear relations of $\log_g(b)$ for every $b \in \mathcal{B}$. To do this we compute $\{0,...,p-1\} \ni g_i \equiv g^i \mod p$ for some random integers $i$, if $g_i$ is $\mathcal{B}$-smooth we have that it factors as 
+\[
+g_i = \prod_{b \in \BB}b^{e_b} \equiv \prod_{b \in \BB} g^{\log_g(b) e_b} \mod p
+\]
+, thus looking at the exponents we have that:
+\begin{equation}
+	\label{eq:logp_eq}
+	i \equiv \sum_{b \in \BB} e_b \log_g(b) \mod p-1 . 
+\end{equation}
+So picking random $i$ we can generate enough linear equation \ref{eq:logp_eq} and pick one of the solutions and assume it to contain the logarithms of the primes.
+
+\begin{rems} \label{rem:num_eq}
+	Surely the vector with the logarithms is a solution, so if we have an overdetermined system (i.e. with more than $\#\BB$ equations) is possible for it to be the unique solution. Thus a possible way to retrieve it is to consider $\#\BB +1$ equations. We will see later in the implementation that we have done something different, both for correctness and efficiency reason. 
+
+	Also we have that $p-1$ is not a prime, but we need a field to perform correctly Gauss Elimination. We can work out this by doing linear algebra on $\ZZ_q$ for all the prime factors $q$ of $p-1$ and combine them with the Chinese Reminder Theorem. We don't have problems with the powers of the factors since from the specifications we got that $p$ is a safeprime, i.e. $p-1 = 2q$ with $q$ prime. 
+\end{rems}
+
+When we have the logarithms of the base we can start to compute $h\cdot g^{-k} \mod p$ for random integers $k$, until we get a $\BB$-smooth number, such that:
+\begin{equation*}
+	h\cdot g^{-k} \equiv \prod_{b \in \BB} b^{l_b} \mod p
+\end{equation*}
+At this point we get that:
+\begin{equation}
+	\label{eq:dlog_final1}
+	\log_g(h) \equiv \sum_{b \in \BB} l_b \cdot \log_g(b) \mod p-1
+\end{equation}
+
+This algorithms works with some attention to the remark during the implementation, but I have found a better version of it in these \href{https://math.mit.edu/classes/18.783/2021/LectureNotes10.pdf}{lecture notes}. 
+Here in fact the two steps are united togheter: instead of considering $g^i$ to find the equations for the linear system we consider directly $h\cdot g^{-k} \mod p$, if it is $\BB$-smooth from the factorization we get an equation:
+
+\begin{equation}
+	\label{eq:dlog_final2}
+	k \equiv \log_g(h) - \sum_{b \in \BB} e_b \cdot \log_g(b) \mod p-1
+\end{equation}
+
+So if we consider a system of linear equations of the form \ref{eq:dlog_final2} surely it contains as solution a vector with first component equal to $\log_g(h)$. I have verified that this method is computationally more efficient, and I thinks that there are two reasons:
 \begin{itemize}
-	\item Removing columns with all zeros \href{https://github.com/giacomoborin/project2_MAGMA/pull/30/commits/4b0b67d0dcbe51f01058c64a06a1c39fdb5cf56e}{4b0b67d}
-	\item Inserting a check, if not passed try adding more equations \href{https://github.com/giacomoborin/project2_MAGMA/pull/30/commits/e17fe016088c6746c46d52d7154922060f8e5366}{e17fe01}
+	\item It is more compact, with a single linear system we can directly get a candidate solution. 
+	\item We need only to look for the first component of the solution\footnote{technically in the implementation it will be the last, but it doesn't matter}, so even if all the others are wrong, but the solution space intersect the line $\left< (1,0,...,0)\right>$ in a single point we are sure that it is the solution. 
 \end{itemize}
 
+\begin{rem}
+	A question that I asked myself was: \textit{but what about the other solutions? Can I try to use them?} The answer is no, in fact the intersection of a line with an affine subspace is an affine subspace that can have only dimension $0$ (so it's a single point) or dimension $1$, thus it is the line itself (of cardinality $p-1$). So looking to the other solutions (if not unique) is equivalent to use brute force.
+\end{rem}
+
+Reference for \textit{index calculus} can be found in \cite[Section 7.2.4]{stinson}.
+
+\subsection{Implementation}
+
+Dario had done the first implementation, using the first version, but there were some problems and some possible improvements. The principal one was that not every solution of the linear system gives the discrete logarithm. I had tried to solve in two ways:
+\begin{itemize}
+	\item Removing columns with all zeros. In fact in this case we don't have condition on the corresponding coordinate, so all the possible values are accettable. The idea at this point is to consider a factor base that contains only the primes with non zero columns modulo $q$ and $2$. A possible way to implement this can be seen in the commit \href{https://github.com/giacomoborin/project2_MAGMA/pull/30/commits/4b0b67d0dcbe51f01058c64a06a1c39fdb5cf56e}{4b0b67d}.
+	\item Since the previous solution isn't enough I have inserted a check to see if the solution is effectively the discrete logarithm, if not the function generate more equations and tries to find a new solution.  
+\end{itemize}
+
+When I have implemented the second version the filtering on the columns was no longer necessary, but still we need to use an iterative strategy. 
+
+Let's look at the final algorithm. It starts with the creation of the factor base, in particular it is done by choosing a bound \texttt{TopB} and using $\BB $$= \{ p \,|\, p \text{ prime and } p \leq \verb|TopB|\}$ (evaluated with the MAGMA function \texttt{PrimesUpTo} ). You can read more on this in the section \ref{sssec:fact_base}. 
+
+Then we can initialize some bounds (explained in section \ref{sssec:bounds}) and two counter, \texttt{rows} and \texttt{newrows}, a random \texttt{exponent} and start the algorithm. Using \\ \texttt{Factorization} we factor $h\cdot g^{-k} \mod p$ and memorize its decomposition. Then se can see if it is $\BB$-smooth directly verifying the containment of the primes in the decomposition into \texttt{B}.
+
+\begin{rem}
+	Mathematically, to see if a number $n$ is $\mathcal{B}$-smooth and get its factorization it should be better to divide for the primes of $\BB$, memorizing the $p$-adic evaluation\footnote{i.e. the maximum exponent $v$ such that $p^v$ divides the integer, but not $p^{v+1}$}. Then if after all the divisions we get $1$ then $n$ is $\BB$-smooth and we have also its factorization. 
+	We have in fact both tried this possibility (\href{https://github.com/giacomoborin/project2_MAGMA/commit/80399ac928cf19e009451f174adc4138283580f2}{80399ac}), but using \texttt{Factorization} is still more efficient, so we have abandoned this possibility. 
+\end{rem}
+
+If $h\cdot g^{-k} \mod p$ is $\BB$-smooth then we increment \texttt{rows} and \texttt{newrows}, we save $k$ (\texttt{exponent}) and the exponents of the factorization. To do this we need to convert it as a vector in $\ZZ^{\#\BB}$ and it is done with the function \texttt{IntermediateZeroPadding} . In the function a sequence of zeros \texttt{seq} is initialized, then we iterate on the primes of $\BB$, if we find one that it is also in the factorization we write the exponent value in \texttt{seq}. Observe that we append a coefficent $1$ at the end, necessary to find $\log_g(h)$. 
+
+When we have enough rows we try to see if we can find a solution. To do this we use the function \texttt{SolveSystem} that solve the corresponding linear system in \texttt{GF(prime)} for \texttt{prime}$\in \{2,(p-1)/2\}$. To do this the function \texttt{Matrix} for the generation of the matrix in the finite field and \texttt{Solution} to solve the linear system. Then we consider the last coordinate of the two vectors and retrive the solution modulo $p-1$ using the chinese reminder theorem (\texttt{CRT}). 
+
+Then we check if $g^{\verb|sol|} \equiv h \mod p$, if not we restart the generation of new rows. We will stop the generation when the number of new rows exceed the second bound, then we look again for a solution and repeat.
+
+\subsubsection{Bound for iterative search} \label{sssec:bounds}
+To actually implement the strategy we need to choose \verb|bound_rows|, that decides when to start looking for solutions the first time, and \verb|bound_new_rows|, i.e. the new equations added before a new search for solutions. 
+The most naive solution is to start from $\# \BB + 1$ and add one equations at each step. Obviously this isn't very efficient, in particular the one step choice. 
+Also 
+
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.5\textwidth}
+    \includegraphics[width=\textwidth]{dlog_plot2d.png}
+    \caption{Bounds in 2D, blue is faster.}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.4\textwidth}
+    \includegraphics[width=\textwidth]{dlog_plot3d.png}
+    \caption{Bounds in 3D.}
+  \end{minipage}
+\end{figure}
 
 
-Using append bad \href{https://github.com/giacomoborin/project2_MAGMA/commit/d12863968fe66504486fa7fea78929ab2aa98f43}{d128639}. 
 
-\subsubsection{B-smoothing}
 
-Mathematically it should be better to proceed in different ways, as done in the commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/80399ac928cf19e009451f174adc4138283580f2}{80399ac}. Sadly it is too slow (MAGMA mistery).
+
+\subsubsection{The factor base}\label{sssec:fact_base}
+Dario found the optimal bound
+
 
 
 
