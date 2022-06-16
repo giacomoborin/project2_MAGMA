@@ -26,7 +26,13 @@ end function;
 
 
 function OURJacobiSymbol(a,n)
+	
+	if GCD(a,n) ne 1 then
+		return 0;
+	end if;
+	
 	r := 1;
+	a := a mod n;
 	while a gt 1 do
 		
 		// S := prop32(S);
@@ -43,12 +49,10 @@ function OURJacobiSymbol(a,n)
 		if (a mod 4 eq 3) and (n mod 4 eq 3) then
 			r := r*(-1);
 		end if;
+		//if a eq 1 then return r; end if;
 		buff := a;
-		a := n;
+		a := n mod a;
 		n := buff;
-
-		a := a mod n;	
-
 	end while;
 	return r;
 end function;
