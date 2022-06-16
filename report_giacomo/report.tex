@@ -33,7 +33,7 @@
 \DeclareMathOperator{\ifff}{\iff}
 
 
-% Theorem definitons 
+% Theorem definitions 
 \theoremstyle{plain}
 \newtheorem{teo}{Theorem}[section]
 \newtheorem{lem}[teo]{Lemma}
@@ -71,11 +71,11 @@
 \maketitle
 
 \begin{abstract}
-	The report contain the implementation of 5 algorithms:
+	The report contains the descriptions of 5 algorithms:
 	\begin{itemize}
 		\item ECDSA, a digital signature scheme based on algebraic curves.
-		\item Pohlig Hellman alorithm for solving discrete logarithm problem for Algebraic curves. Particularly efficient when the base point has order with only small primes in the factorization
-		\item Index Calculus algorithm for solving discrete logarithm problem for in finite fields of prime order using linear algebra and B-smooth sieving.
+		\item Pohlig Hellman algorithm for solving discrete logarithm problem on Algebraic curves. Particularly efficient when the base point has order with only small primes in the factorization
+		\item Index Calculus algorithm for solving discrete logarithm problem in finite fields of prime order using linear algebra and B-smooth sieving.
 		\item Solovay-Strassen primality test, based on the evaluation of the Jacobi Symbol.
 		\item Lehman factorization algorithm, based on a modification of the Fermat factorization algorithm.
 	\end{itemize}
@@ -87,20 +87,22 @@
 
 In general functions already implemented in MAGMA are significantly faster than ours, so when possible we have used them. 
 
+Also I will assume that you will have the code near, since I will refer to it and to the variables.
+
 
 \section{ECDSA}
 
-ECDSA is a Digital Singature Algorithm based on elliptic curves proposed by \cite{ECDSA} based on the difficulty of the discrete logarithm on them. 
+ECDSA is a Digital Signature Algorithm based on elliptic curves proposed by \cite{ECDSA} based on the difficulty of the discrete logarithm on them. 
 
 The public setup of the scheme is composed by the finite field $\F_q$, an elliptic curve $E = E(\F_q)$ and a base point $G$ with order a large prime $r$. Then Alice can generate a private key $d\in \{2,..,r-1\}$ and publish the public key $d\cdot G$. The message is an integer $m$ (usually it is the hash of the message) and to sign it Alice has to perform:
 \begin{enumerate}
 	\item Choose a random $k$ with $1 \leq k < r$.
 	\item Evaluate $R = k \cdot G$.
-	\item Evaluare $ s = (m + d\cdot R_x) k^{-1} \mod r$, where $R = (R_x : R_y : 1)$.
+	\item Evaluate $ s = (m + d\cdot R_x) k^{-1} \mod r$, where $R = (R_x : R_y : 1)$.
 \end{enumerate}
 The signature of $m$ is then $(R,s)$.
 
-To verify it Bob has to:
+To verify $(m,R,s)$ Bob has to:
 \begin{enumerate}
 	\item Compute $u_1 = s^{-1} m \mod r$ and $u_2 = s^{-1} R_x  \mod r$.
 	\item Evaluate $V = u_1 \cdot G + u_2 \cdot Q$. 
@@ -111,7 +113,7 @@ To verify it Bob has to:
 	Alice is generating a valid signature for each choices of the parameters
 \end{teo}
 \begin{proof}
-	We simply do the computation recalling that the calculations on the coefficents are done modulo the order $r$:
+	We simply do the computation recalling that the calculations on the coefficients are done modulo the order $r$:
 	\begin{multline*}
 		V = u_1 \cdot G + u_2 \cdot Q = s^{-1} \cdot m \cdot G + s^{-1} \cdot R_x \cdot (d \cdot G) = \\
 		= s^{-1} (m + d\cdot R_x) \cdot G = k\cdot (m + d\cdot R_x)^{-1} (m + d\cdot R_x) \cdot G = \\
@@ -120,16 +122,16 @@ To verify it Bob has to:
 \end{proof}
 
 
-\subsection{Implementation choiches}
+\subsection{Implementation choices}
 
 We have implemented the algorithm from~\cite[Section 6.6]{washington}.
 
-I've personally implemented all the code and a good part of the test vectors (it didn't took a lot of time), while Dario helped with debugging. The code is the plain transposition of the previous instructions in MAGMA, using the \texttt{EllipticCurve} operations, so there isn't much to say. I will reacall only some small observations.
+I've personally implemented all the code and a good part of the test vectors (it didn't took a lot of time), while Dario helped with debugging. The code is the plain transposition of the previous instructions in MAGMA, using the \texttt{EllipticCurve} operations, so there isn't much to say. I will recall only some small observations.
 
 We can see that it would be faster to use a small $k$ (for example $k = 4$ as Sony), since it simplifies a lot the evaluation of $kG$ (in fact $k=4$ would require only two doublings) but it would be very bad for security. 
-However I have tried to use again the idea, considering $k \in [-\frac{r}{2}, \frac{r}{2}]$, so that the modulus is sligtly smaller and we save some doublings. To do this I have also defined the function \texttt{mmod(a,m)} that returns an integer in $[-\frac{r}{2}, \frac{r}{2}]$ equalt to $a$ modulo $m$. This idea saves only a small time ($0.1$ seconds)\footnote{Some evaluation can be seen in the \href{https://github.com/giacomoborin/project2_MAGMA/pull/36}{associated pull request}}.
+However I have tried to use again the idea, considering $k \in [-\frac{r}{2}, \frac{r}{2}]$ (instead of $k \in \{1,..,r-1\}$, so that the modulus is slightly smaller and we save some doublings. To do this I have also defined the function \texttt{mmod(a,m)} that returns an integer in $[-\frac{r}{2}, \frac{r}{2}]$ equal to $a$ modulo $m$. This idea saves only a small time ($0.1$ seconds)\footnote{Some evaluation can be seen in the \href{https://github.com/giacomoborin/project2_MAGMA/pull/36}{associated pull request}}.
 
-Another observation is that we have used \texttt{Modinv} to find the inverses modulo $r$ and in the verification algorithm we evaluate $s^{-1}$ only one time. Sadly we had to use two casts, since the coordinates of the point \texttt{R} and in the finite field, but we need type \texttt{Integers()} to perform the moltiplications. 
+Another observation is that we use \texttt{Modinv} to find the inverses modulo $r$ and in the verification algorithm we evaluate $s^{-1}$ only one time, by saving it. Sadly we had to use two casts, since the coordinates of the point \texttt{R} are in the finite field, but we need type \texttt{Integers()} to perform the multiplications. 
 
 %\begin{lstlisting}[language = magma]
 %> load "ECDSA.mag"; // k random
@@ -145,7 +147,6 @@ Another observation is that we have used \texttt{Modinv} to find the inverses m
 %\end{lstlisting}
 
 
-Another simple idea is to evaluate only once the inverse of $s$, it saves only $0.1$ seconds, but it is still worth it (you can see more on \href{https://github.com/giacomoborin/project2_MAGMA/issues/13}{the relative issue on github}).
 
 \section{Pohlig-Hellman}
 
@@ -153,7 +154,7 @@ The Pohlig-Hellman method is an algorithm for the evaluation of the discrete log
 , i.e. given $P$ and $Q$ in a group $G$ such that $P$ has finite order $N$ and exists $k\in \{0,...,N-1\}$ such that $kP = Q$ the algorithm finds $k$. 
 
 \begin{nota}
-	I will use additive notation for the group operation with neutral element $O$ since we are requested to implement this algorithm for solving discrete logarithm for Elliptic Curves. 
+	I will use additive notation for the group operation with neutral element $O$ since we implemented this algorithm for Elliptic Curves. 
 \end{nota}
 
 \begin{idea} \label{idea:ecdlp}
@@ -164,7 +165,7 @@ The Pohlig-Hellman method is an algorithm for the evaluation of the discrete log
 	Solve now the discrete logarithm modulo $p_i^{e_i}$ for all $i = 1,...,r$ and use these values to evaluate $k$ using the Chinese Reminder Theorem. 
 \end{idea}
 
-Let's see a first naive version of the strategy\footnote{I know that this is indeed very similiar to a real code, but for me it is easier to understand} for finding $k \,\text{mod}\, p^e$:
+Let's see a first naive version of the strategy\footnote{I know that this is indeed very similar to a real code, but for me it is easier to understand} for finding $k \,\text{mod}\, p^e$:
 
 \begin{algo}\label{algo:ecdlp_naive}
 
@@ -174,7 +175,7 @@ Let's see a first naive version of the strategy\footnote{I know that this is ind
 		\item \label{enum:while} find $(j,R)\in T$ such that $R = \frac{N}{p^{i+1}}Q_i$ and assign $k_i := j$
 		\item Increment $i := i + 1$, then:
 		\item \label{enum:if} If $i < e$ assign $Q_i := Q_{i-1} - k_{i-1} p^{i-1}P$ and return to step \ref{enum:while}
-		\item Then we have $k \equiv k_0 + k_1p + ... + k_{e-1}p^{e-1} \mod q^e$ \label{enum:final_dlp}.
+		\item Then we have $k \equiv k_0 + k_1p + ... + k_{e-1}p^{e-1} \mod p^e$ \label{enum:final_dlp}.
 	\end{enumerate}
 
 \end{algo}
@@ -227,19 +228,19 @@ So to find the discrete logarithm we only have to repeat the previous steps for 
 \]
 using the Chinese Reminder Theorem and get the desired $k \in \{0,...,N-1\}$. 
 
-The strenght of this algorithm is that we are performing the discrete logarithm by linear search $\sum e_i$ times in sets of cardinality $p_i$ (having then a complexity of $O(e_j p_j)$ where $p_j$ is the greatest prime factor) instead of one time for all the $N$ values in $\left< P \right>$. So obviously if the factors of $N$ are small we obtain a result much better than $O(\sqrt{N})$ of other general algorithms (like Shanks or Pollard-Rho). 
+The strength of this algorithm is that we are performing the discrete logarithm by linear search $\sum e_i$ times in sets of cardinality $p_i$ (having then a complexity of $O(e_j p_j)$ where $p_j$ is the greatest prime factor) instead of one time for all the $N$ values in $\left< P \right>$. So obviously if the factors of $N$ are small we obtain a result much better than $O(\sqrt{N})$ of other general algorithms (like Shanks or Pollard-Rho). 
 
 For the description (and implementation) of the algorithm I have used \linebreak
-\cite[Section 5.2.3]{washington} and \cite[Section 7.2.3]{stinson} (written in multiplicative notation and with a more costructive description). 
+\cite[Section 5.2.3]{washington} and \cite[Section 7.2.3]{stinson} (written in multiplicative notation and with a more constructive description). 
 
 \subsection{Implementation}
 
 For now on I will use the same notation used in the code of\\ \texttt{ECDLP}\verb|_|\texttt{PohligHellman(q, E, P, r, Q)}.
 
-Let's start with considering what we have \textbf{not} implemented, i.e. the functions already contatined in MAGMA that we have decided to use since they are more efficient:
+Let's start with considering what we have \textbf{not} implemented, i.e. the functions already contained in MAGMA:
 \begin{itemize}
 	\item \verb|Factorization|, necessary to factor the order of the point \verb|r|
-	\item \verb|CRT|, that at the end evaluate the solution of the system modulo \verb|r| of congruences resulting after the for loop.
+	\item \verb|CRT|, that at the end evaluate modulo \verb|r| the solution of the system  of congruences resulting after the for loop.
 	\item \verb|IsPrimitive|, I will explain later why we need it.
 	\item The \verb|EllipticCurve| \href{http://magma.maths.usyd.edu.au/magma/handbook/elliptic_curves}{structure} and all its functions (in particular the sum and the doubling). 
 \end{itemize}
@@ -247,7 +248,7 @@ Let's start with considering what we have \textbf{not} implemented, i.e. the fun
 The first working implementation (\href{https://github.com/giacomoborin/project2_MAGMA/blob/2416fa58ca58ef91075fc4a52427d68a5fa182c1/ECDLP.mag}{2416fa5}) of the code followed step by step the Algorithm \ref{algo:ecdlp_naive}. It was very slow because of two principal reasons:
 \begin{enumerate}
 	\item \label{enum:append} Extensive use of the command \verb|Append|, slow since memory allocation for sequences is expensive, particularly in MAGMA.
-	\item \label{enum:map} The use of the command \texttt{map<|>}, similiar to the dictionary in Python, but sadly not efficient in MAGMA. 
+	\item \label{enum:map} The use of the command \texttt{map<|>}, similar to the dictionary in Python, but sadly not efficient in MAGMA. 
 \end{enumerate}
 The second command was used to perform the steps \ref{enum:store} and \ref{enum:while} of the procedure, that we have individuated as the most time consuming parts of the method:
 
@@ -255,31 +256,33 @@ The second command was used to perform the steps \ref{enum:store} and \ref{enum:
 	Evaluate and store all the values $\{ (j,j\left(\frac{N}{p}P\right)) \,|\, j = 0,...,q-1 \}$ (step \ref{enum:store}). In the code $\frac{N}{p}P$ is \verb|coeffP|. 
 \end{prob}
 
-\begin{prop}[Search]
+\begin{prob}[Search]
 	Search into the evaluated points and return the corresponding index (step \ref{enum:while})
-\end{prop}
+\end{prob}
 
 To solve these problems I have observed that we can consider two different cases: $e=1$ and $e>1$ (where $e$ is the exponent of the prime in the factorization).
 
 \subsection{Case e=1}
-Here we can solve the two problems togheter perferming in parallel the evaluation of \verb|j*coeffP| while checking if it is equal to \verb|Qs|. In this way we the memory allocation is negligible and we will need on average \verb|prime|$/2$ operations. 
+Here we can solve the two problems together performing in parallel the evaluation of \verb|j*coeffP| while checking if it is equal to \verb|Qs|. In this way we the memory allocation is negligible and we will need on average \verb|prime|$/2$ operations. 
 
-Let's look more in details to the implementation choices in this case. Obviously we start evaluating \texttt{Qs} (corresponding to $\frac{N}{r}Q$). If it is the infinity point we return directly \verb|k|$=k_0 = 0$ otherwhise we distinguish two other cases. 
+Let's look more in details to the implementation choices in this case. Obviously we start evaluating \texttt{Qs} (corresponding to $\frac{N}{r}Q$). If it is the infinity point we return directly \verb|k|$=k_0 = 0$ otherwise we distinguish two other cases. 
 
 In the second one we do the simple evaluation starting from $k = 1$ and $\verb|Point| = \verb|coeffP|$, then increment $k$ by $1$ and \verb|Point| by \verb|coeffP| until we find \verb|Point eq Qs|.
 
 In the first we look if $2$ is primitive in $\mathbb{Z}_p$, in this way to get all the multiples of \verb|coeffP| we can evaluate instead $2^j\verb|coeffP|$ for $j = 0, ..., p-2$. 
 
-So insted of incrementing $k$ we multiply it by $2 \mod p$ and we double \verb|Point|, that is sligtly faster with respect to adding points. (commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/d2d2692170bebfa2b465307761de5c7ee52121bf}{d2d2692})
+So instead of incrementing $k$ we multiply it by $2 \mod p$ and we double \verb|Point|, that is slightly faster with respect to adding points. (commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/d2d2692170bebfa2b465307761de5c7ee52121bf}{d2d2692})
 
 \subsection{Case e>1}
 
 In this case we go straight with the computation and the storing of points. The only two improvements added where the pre-initialization of the array \verb|T| to reduce new memory allocation and the use of the function \verb|Position| to find the index.
 
-Observe that also \verb|K| and \verb|Qs| where pre-initilized with buffer values. 
+Observe that also \verb|K| and \verb|Qs| where pre-initialized with buffer values. 
 
-\begin{rem} %TODO
-	Doing log insted of the search good, but forbidden
+\begin{rem} 
+	In a real implementation of the code is possible to improve the speed doing a combination with other methods\footnote{idea from \cite{stinson}, at page 265}: for example we could use Shanks method to perform the step \ref{enum:while} (avoiding the step \ref{enum:store}), resulting with a complexity of $O(e_i \sqrt{p_i})$ where $p_i$ is the greatest prime factor. In this implementation another possible improvement would be to save and reuse the first vector of Shanks algorithm when $e>1$. 
+
+	In our case the primes of the factorization where too small to see a real speed up in using this approach (and also it would had been against the rules of the competition).
 \end{rem}
 
 
@@ -289,14 +292,14 @@ The Index Calculus is a method based on linear algebra to solve the discrete log
 
 The idea is to fix a factor base $\mathcal{B}$ of primes and find linear relations of $\log_g(b)$ for every $b \in \mathcal{B}$. To do this we compute $\{0,...,p-1\} \ni g_i \equiv g^i \mod p$ for some random integers $i$, if $g_i$ is $\mathcal{B}$-smooth we have that it factors as 
 \[
-g_i = \prod_{b \in \BB}b^{e_b} \equiv \prod_{b \in \BB} g^{\log_g(b) e_b} \mod p
+g_i = \prod_{b \in \BB}b^{e_b} \equiv \prod_{b \in \BB} g^{\log_g(b) e_b} \mod p,
 \]
-, thus looking at the exponents we have that:
+thus looking at the exponents we have that:
 \begin{equation}
 	\label{eq:logp_eq}
 	i \equiv \sum_{b \in \BB} e_b \log_g(b) \mod p-1 . 
 \end{equation}
-So picking random $i$ we can generate enough linear equation \ref{eq:logp_eq} and pick one of the solutions and assume it to contain the logarithms of the primes.
+So picking random $i$ we can generate enough linear equation \ref{eq:logp_eq}, find a solution with Gaussian Elimination and assume it to contain the logarithms of the primes.
 
 \begin{rems} \label{rem:num_eq}
 	Surely the vector with the logarithms is a solution, so if we have an overdetermined system (i.e. with more than $\#\BB$ equations) is possible for it to be the unique solution. Thus a possible way to retrieve it is to consider $\#\BB +1$ equations. We will see later in the implementation that we have done something different, both for correctness and efficiency reason. 
@@ -308,21 +311,21 @@ When we have the logarithms of the base we can start to compute $h\cdot g^{-k} \
 \begin{equation*}
 	h\cdot g^{-k} \equiv \prod_{b \in \BB} b^{l_b} \mod p
 \end{equation*}
-At this point we get that:
+At this point we can compute:
 \begin{equation}
 	\label{eq:dlog_final1}
 	\log_g(h) \equiv \sum_{b \in \BB} l_b \cdot \log_g(b) \mod p-1
 \end{equation}
 
-This algorithms works with some attention to the remark during the implementation, but I have found a better version of it in these \href{https://math.mit.edu/classes/18.783/2021/LectureNotes10.pdf}{lecture notes}. 
-Here in fact the two steps are united togheter: instead of considering $g^i$ to find the equations for the linear system we consider directly $h\cdot g^{-k} \mod p$, if it is $\BB$-smooth from the factorization we get an equation:
+This algorithms works, with some attentions to the remark during the implementation, but I have found a better version of it in these \href{https://math.mit.edu/classes/18.783/2021/LectureNotes10.pdf}{lecture notes}. 
+Here in fact the two steps are united together: instead of considering $g^i$ to find the equations for the linear system we consider directly $h\cdot g^{-k} \mod p$. If it is $\BB$-smooth from the factorization we get the equation:
 
 \begin{equation}
 	\label{eq:dlog_final2}
 	k \equiv \log_g(h) - \sum_{b \in \BB} e_b \cdot \log_g(b) \mod p-1
 \end{equation}
 
-So if we consider a system of linear equations of the form \ref{eq:dlog_final2} surely it contains as solution a vector with first component equal to $\log_g(h)$. I have verified that this method is computationally more efficient, and I thinks that there are two reasons:
+So if we consider a system of linear equations of the form \ref{eq:dlog_final2} surely it contains as solution a vector with first component equal to $\log_g(h)$. I have verified that this method is computationally more efficient, and I think that there are two reasons:
 \begin{itemize}
 	\item It is more compact, with a single linear system we can directly get a candidate solution. 
 	\item We need only to look for the first component of the solution\footnote{technically in the implementation it will be the last, but it doesn't matter}, so even if all the others are wrong, but the solution space intersect the line $\left< (1,0,...,0)\right>$ in a single point we are sure that it is the solution. 
@@ -338,7 +341,7 @@ Reference for \textit{index calculus} can be found in \cite[Section 7.2.4]{stin
 
 Dario had done the first implementation, using the first version, but there were some problems and some possible improvements. The principal one was that not every solution of the linear system gives the discrete logarithm. I had tried to solve in two ways:
 \begin{itemize}
-	\item Removing columns with all zeros. In fact in this case we don't have condition on the corresponding coordinate, so all the possible values are accettable. The idea at this point is to consider a factor base that contains only the primes with non zero columns modulo $q$ and $2$. A possible way to implement this can be seen in the commit \href{https://github.com/giacomoborin/project2_MAGMA/pull/30/commits/4b0b67d0dcbe51f01058c64a06a1c39fdb5cf56e}{4b0b67d}.
+	\item Removing columns with all zeros. In fact in this case we don't have condition on the corresponding coordinate, so all the possible values are acceptable. The idea at this point is to consider a factor base that contains only the primes with non zero columns modulo $q$ and $2$. A possible way to implement this can be seen in the commit \href{https://github.com/giacomoborin/project2_MAGMA/pull/30/commits/4b0b67d0dcbe51f01058c64a06a1c39fdb5cf56e}{4b0b67d}.
 	\item Since the previous solution isn't enough I have inserted a check to see if the solution is effectively the discrete logarithm, if not the function generate more equations and tries to find a new solution.  
 \end{itemize}
 
@@ -346,43 +349,53 @@ When I have implemented the second version the filtering on the columns was no l
 
 Let's look at the final algorithm. It starts with the creation of the factor base, in particular it is done by choosing a bound \texttt{TopB} and using $\BB $$= \{ p \,|\, p \text{ prime and } p \leq \verb|TopB|\}$ (evaluated with the MAGMA function \texttt{PrimesUpTo} ). You can read more on this in the section \ref{sssec:fact_base}. 
 
-Then we can initialize some bounds (explained in section \ref{sssec:bounds}) and two counter, \texttt{rows} and \texttt{newrows}, a random \texttt{exponent} and start the algorithm. Using \\ \texttt{Factorization} we factor $h\cdot g^{-k} \mod p$ and memorize its decomposition. Then se can see if it is $\BB$-smooth directly verifying the containment of the primes in the decomposition into \texttt{B}.
+Then we can initialize some bounds (explained in section \ref{sssec:bounds}), two counter, \texttt{rows} and \texttt{newrows}, a random \texttt{exponent} and then start the algorithm. Using \\ \texttt{Factorization} we factor $h\cdot g^{-k} \mod p$ and memorize its decomposition. Then we can see if it is $\BB$-smooth directly verifying the containment of the primes in the decomposition into \texttt{B}.
 
 \begin{rem}
-	Mathematically, to see if a number $n$ is $\mathcal{B}$-smooth and get its factorization it should be better to divide for the primes of $\BB$, memorizing the $p$-adic evaluation\footnote{i.e. the maximum exponent $v$ such that $p^v$ divides the integer, but not $p^{v+1}$}. Then if after all the divisions we get $1$ then $n$ is $\BB$-smooth and we have also its factorization. 
-	We have in fact both tried this possibility (\href{https://github.com/giacomoborin/project2_MAGMA/commit/80399ac928cf19e009451f174adc4138283580f2}{80399ac}), but using \texttt{Factorization} is still more efficient, so we have abandoned this possibility. 
+	Mathematically, to see if a number $n$ is $\mathcal{B}$-smooth and get its factorization it should be better to divide for the primes of $\BB$, memorizing the $p$-adic evaluation\footnote{i.e. the maximum exponent $v$ such that $p^v$ divides the integer, but not $p^{v+1}$}. Then if after all the divisions we get $1$ $n$ is $\BB$-smooth and we have also its factorization. 
+	We have in fact both tried this possibility (\href{https://github.com/giacomoborin/project2_MAGMA/commit/80399ac928cf19e009451f174adc4138283580f2}{80399ac}), but using \texttt{Factorization} is still more efficient, so we have abandoned it. 
 \end{rem}
+If $h\cdot g^{-k} \mod p$ is $\BB$-smooth then we increment \texttt{rows} and \texttt{newrows}, we save $k$ (\texttt{exponent}) and the exponents of the factorization. To do this we need to convert it as a vector in $\ZZ^{\#\BB}$ and it is done with the function \texttt{IntermediateZeroPadding} (done by Dario). In the function a sequence of zeros \texttt{seq} is initialized, then we iterate on the primes of $\BB$, if we find one that it is also in the factorization we write the exponent value in \texttt{seq}. Observe that we append a coefficient $1$ at the end, necessary to find $\log_g(h)$. 
 
-If $h\cdot g^{-k} \mod p$ is $\BB$-smooth then we increment \texttt{rows} and \texttt{newrows}, we save $k$ (\texttt{exponent}) and the exponents of the factorization. To do this we need to convert it as a vector in $\ZZ^{\#\BB}$ and it is done with the function \texttt{IntermediateZeroPadding} . In the function a sequence of zeros \texttt{seq} is initialized, then we iterate on the primes of $\BB$, if we find one that it is also in the factorization we write the exponent value in \texttt{seq}. Observe that we append a coefficent $1$ at the end, necessary to find $\log_g(h)$. 
-
-When we have enough rows we try to see if we can find a solution. To do this we use the function \texttt{SolveSystem} that solve the corresponding linear system in \texttt{GF(prime)} for \texttt{prime}$\in \{2,(p-1)/2\}$. To do this the function \texttt{Matrix} for the generation of the matrix in the finite field and \texttt{Solution} to solve the linear system. Then we consider the last coordinate of the two vectors and retrive the solution modulo $p-1$ using the chinese reminder theorem (\texttt{CRT}). 
+When we have enough rows we try to see if we can find a solution. To do this we use the function \texttt{SolveSystem} that solve the corresponding linear system in \texttt{GF(prime)} for \texttt{prime}$\in \{2,(p-1)/2\}$. To do this the function \texttt{Matrix} for the generation of the matrix in the finite field and \texttt{Solution} to solve the linear system. Then we consider the last coordinate of the two vectors and retrieve the solution modulo $p-1$ using the Chinese reminder theorem (\texttt{CRT}). 
 
 Then we check if $g^{\verb|sol|} \equiv h \mod p$, if not we restart the generation of new rows. We will stop the generation when the number of new rows exceed the second bound, then we look again for a solution and repeat.
 
 \subsubsection{Bound for iterative search} \label{sssec:bounds}
-To actually implement the strategy we need to choose \verb|bound_rows|, that decides when to start looking for solutions the first time, and \verb|bound_new_rows|, i.e. the new equations added before a new search for solutions. 
+To actually implement the strategy we need to choose \verb|bound_rows|, that decides when to call \texttt{SolveSystem} the first time, and \verb|bound_new_rows|, i.e. the new equations added before a new search for solutions. 
 The most naive solution is to start from $\# \BB + 1$ and add one equations at each step. Obviously this isn't very efficient, in particular the one step choice. 
-First of all to define them I have decided to consider a percentage of $\# \BB$, then I have tried several combinations of the two bounds, in particular with \verb|bound_rows| less than $\# \BB$. After some attempts I have decided to try all the possible combinations and look for the optimal ones. 
+First of all to define them I have decided to consider a percentage of $\# \BB$, then I have tried several combinations of the two bounds, in particular with \verb|bound_rows| less than $\# \BB$. After some attempts I have decided to try all the possible combinations and look for the optimal ones. You can see a visualization of the data in figure \ref{fig:dlog_plot2d}, where the blue points represent the fastest combinations. You can see that the better results are for \textit{small bound} (corresponding to \verb|bound_new_rows|) around $0.32$ or $0.46$. Different values for the \textit{big bound} correspond to marginal improvements, however some are better than others. I have chosen as final combination: \\
+\verb|bound_rows := Floor((#B)*(0.78));| \\ \verb|bound_new_rows :=Floor((#B)*(0.32));|. 
+
+
+Looking at the evaluations we can see that in around $74\%$ of the cases we find the discrete logarithm calling \texttt{SolveSystem} only one time, while in all the others we only need to call \texttt{SolveSystem} one more time.
+
 
 \begin{figure}[!tbp]
-  \centering
-  \begin{minipage}[b]{0.5\textwidth}
-    \includegraphics[width=\textwidth]{dlog_plot2d.png}
-    \caption{Bounds in 2D, blue is faster.}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[b]{0.4\textwidth}
-    \includegraphics[width=\textwidth]{dlog_plot3d.png}
-    \caption{Bounds in 3D.}
-  \end{minipage}
+	\centering
+  	\begin{minipage}[b]{0.5\textwidth}
+		\label{fig:dlog_plot2d}
+   		\includegraphics[width=\textwidth]{dlog_plot2d.png}
+    		\caption{Bounds in 2D, blue is faster.}
+  	\end{minipage}
+  	\hfill
+  	\begin{minipage}[b]{0.4\textwidth}
+    		\includegraphics[width=\textwidth]{dlog_plot3d.png}
+    		\caption{Bounds in 3D.}
+  	\end{minipage}
 \end{figure}
 
 
-
-
-
 \subsubsection{The factor base}\label{sssec:fact_base}
-Dario found the optimal bound
+
+To find an optimal factor base we need to choose \texttt{TobB} properly. 
+Dario handled this by looking at the notes cited before and found a possible form as:
+\begin{equation}
+	\label{eq:dlog_topb}
+	e^{c\cdot (\log(p) + \log(\log(p))^2)^{1/3}}
+\end{equation}
+
+It only remained to find the optimal value for $c$ and it was done by brute force over an interval. Also other possible bounds where tried by Dario, but the form \ref{eq:dlog_topb} was the fastest. 
 
 
 
@@ -395,11 +408,11 @@ The Solovay-Strassen test is a primality test based on the Euler's criterion:
 	\[ a^{\frac{p-1}{2}} \equiv \left(\dfrac{a}{p}\right) \mod p \]
 \end{teo}
 
-The term on the right is the Legendre Symbol, that is equal to $0$ if $p$ divides $a$, to $1$ if it is a quadratic residue modulo $p$\footnote{if exists $b$ integer such that $a \equiv b^2 \mod p$} and $-1$ otherwhise. The generalization of the Legendre Symbol for all integers $n = p_1^{e_1} \cdots p_r^{e_r}$ is the Jacobi Symbol: 
+The term on the right is the Legendre Symbol, that is equal to $0$ if $p$ divides $a$, to $1$ if it is a quadratic residue modulo $p$\footnote{if exists $b$ integer such that $a \equiv b^2 \mod p$} and $-1$ otherwise. The generalization of the Legendre Symbol for all integers $n = p_1^{e_1} \cdots p_r^{e_r}$ is the Jacobi Symbol: 
 
 \[ \left(\dfrac{a}{n}\right) := \left(\dfrac{a}{p_1}\right)^{e_1} \cdots \left(\dfrac{a}{p_r}\right)^{e_r} \] 
 	
-Since for general composite integers the theorem \ref{teo:eu_quad} won't always hold we can exploit this for a primality test. Given an odd integer $n$ the idea is to evaluate the two terms on a random integer $a\in \{2,...,n-1\}$ separately, see if they are equal, if no then $n$ is composite, otherwhise we change $a$ and repeat. We can conclude that $n$ is composite also if the Jacobi Symbol is equal to $0$, in fact this would imply that exists a prime $p_i$ dividing $a<n$ and $n$, so $n$ has a proper factor (in common with $a$). 
+Since for general composite integers the theorem \ref{teo:eu_quad} won't always hold we can exploit this for a primality test. Given an odd integer $n$ the idea is to evaluate the two terms on a random integer $a\in \{2,...,n-1\}$ separately, see if they are equal, if no then $n$ is composite, otherwise we change $a$ and repeat. We can conclude that $n$ is composite also if the Jacobi Symbol is equal to $0$, in fact this would imply that exists a prime $p_i$ dividing $a<n$ and $n$, so $n$ has a proper factor (in common with $a$). 
 
 \begin{prob}\label{prob:jacobi}
 	How do we evaluate the Jacobi Symbol without knowing the factorization of $n$?
@@ -424,39 +437,39 @@ Observe that what we want is $\PP(n\text{ is composite}|n \text{ pass the SS tes
 
 You can see the proof of this at page 208 of \cite[Section 6.4.2]{stinson}.
 
-In our implementation we repeat the test $m=10$ times and the test vectors are integers $n \approx 2^20 \approx e^{13.9}$, se we get a pseudoprime with probability:
+In our implementation we repeat the test $m=10$ times and the test vectors are integers $n \approx 2^20 \approx e^{13.9}$, we we get a pseudoprime with probability:
 \begin{equation*}
-	\leq frac{13.9 - 2}{13.9 - 2 + 2^{11}} \approx 0.00577
+	\leq \frac{13.9 - 2}{13.9 - 2 + 2^{11}} \approx 0.00577
 \end{equation*}
 
-Is likely that the real probability is less, since I was unable to find a counter example.
+It is likely that the real probability is less, since I was unable to find a random counterexample.
 
 So we have partially solved problem \ref{prob:eff_ss}, we focus now on problem \ref{prob:jacobi}. In the code I have solved this problem using the native MAGMA function \texttt{JacobiSymbol}, clearly very fast, but I want however to show a simple way to evaluate it (also implemented in the file, but not used) without the factorization to prove we can solve problem \ref{prob:jacobi}.
 
 The idea is to use some of the properties of the Jacobi Symbol (inherited from the corresponding ones of the Legendre Symbol) to reduce the problem to it's evaluation on $0$, $1$ (trivial) and $2$. I insert the property in the order in which they are used. 
 \begin{enumerate}
-	\item We can evaluate $ \left(\dfrac{2}{n}\right) $ as $1$ for $n\equiv \pm 1 \mod 8$ and $-1$ otherwhise. Also we have $ \left(\dfrac{ac}{n}\right) = \left(\dfrac{a}{n}\right)  \left(\dfrac{c}{n}\right) $. So if $a = 2^km$ (with $m$ odd) we have that:
+	\item We can evaluate $ \left(\dfrac{2}{n}\right) $ as $1$ for $n\equiv \pm 1 \mod 8$ and $-1$ otherwise. Also we have $ \left(\dfrac{ac}{n}\right) = \left(\dfrac{a}{n}\right)  \left(\dfrac{c}{n}\right) $. So if $a = 2^km$ (with $m$ odd) we have that:
 	\begin{itemize}
 		\item $\left(\dfrac{a}{n}\right) = \left(\dfrac{m}{n}\right)$ for $k$ even or $n\equiv \pm 1 \mod 8$ 
-		\item $\left(\dfrac{a}{n}\right) = -\left(\dfrac{m}{n}\right)$ otherwhise
+		\item $\left(\dfrac{a}{n}\right) = -\left(\dfrac{m}{n}\right)$ otherwise
 	\end{itemize}
-	\item $\left(\dfrac{a}{n}\right) = - \left(\dfrac{n}{a}\right)$ for $m \equiv n \equiv 3 \mod 4$ and $\left(\dfrac{m}{n}\right) = \left(\dfrac{n}{m}\right)$ otherwhise
+	\item $\left(\dfrac{a}{n}\right) = - \left(\dfrac{n}{a}\right)$ for $m \equiv n \equiv 3 \mod 4$ and $\left(\dfrac{a}{n}\right) = \left(\dfrac{n}{a}\right)$ otherwise
 	\item $\left(\dfrac{a}{n}\right) = \left(\dfrac{a \mod n}{n}\right)$
 \end{enumerate}
 
-We repeat these steps until $a\in\{0,1\}$ memorizing the sign changes. We then return the sign if $a=1$, and $0$ otherwhise.
+We repeat these steps until $a\in\{0,1\}$ memorizing the sign changes. We then return the sign if $a=1$, and $0$ otherwise.
 
 Since the case in which we return $0$ is equivalent to $a$ having a common factor we can avoid calculation verifying in advance if $\gcd(a,n) \neq 1$, eventually returning $0$. 
 
 \subsection{Final remark on the implementation}
 
-There isn't much more to say with respect to the implementation, in fact the only two expensive part are the evalutations of the Jacobi Symbol (very efficient using the native function) and of $a^{\frac{n-1}{2}} \mod n$ (done with \texttt{Modexp}). All the other changes that I have tried, for example the way to check $x\equiv y \mod n$, didn't improve the time.  
+There isn't much more to say with respect to the implementation, in fact the only two expensive part are the evaluations of the Jacobi Symbol (very efficient using the native function) and of $a^{\frac{n-1}{2}} \mod n$ (done with \texttt{Modexp}). All the other changes that I have tried, for example the way to check $x\equiv y \mod n$, didn't improve the time.  
 
 
 
 \section{Lehman}
 
-The Lehman factorization algorithm is a modification of the Fermat factorization algorithm proposed in \cite{lehman}. It has complexity of $O(n^{1/3})$ and it was the first hystorical example of an algorithm with time complexity less than $O(n^{1/2})$. 
+The Lehman factorization algorithm is a modification of the Fermat factorization algorithm proposed in \cite{lehman}. It has complexity of $O(n^{1/3})$ and it was the first historical example of an algorithm with time complexity less than $O(n^{1/2})$. 
 
 The principal result of the article is the following theorem:
 
@@ -499,7 +512,7 @@ The trial division require $O\left( \left( \frac{n}{r}\right)^{1/2} \right)$ ope
 	O\left( \left( \frac{n}{r}\right)^{1/2} \right) + \sum_{k =1}^r O\left( \frac{1}{r} \left(\frac{n}{k}\right)^{1/2} + 1\right)
 \end{equation}
 
-that for $r = O(n^{1/3})$ can be approximated to a complexity of $O(n^{1/3})$. This choice is not proven to be optimal, in fact for the calculation it is used that $ \sum_{i=1}^r O\left( \frac{1}{k^{1/2}}\right) \subset O(r^{1/2})$, and I think that we can do better (at least emprically I have observed that for $r = n^(1/4)$ we can do better).
+that for $r = O(n^{1/3})$ can be approximated to a complexity of $O(n^{1/3})$. This choice is not proven to be optimal, in fact for the calculation it is used that $ \sum_{i=1}^r O\left( \frac{1}{k^{1/2}}\right) \subset O(r^{1/2})$, and I think that we can do better (at least empirically I have observed that for $r = n^{1/4}$ we can do better).
 
 \subsection{Implementation}
 
@@ -535,35 +548,42 @@ Then we initialize a boolean array \texttt{QR} (outside of the function), the va
 
 
 \begin{rem}
-	Statistical tests showed that $r = n^{1/4}$ achieves better performances, as it can be seen in Figure \ref{fig:r_choice}. I have tried them because I wasn't conviced by the big $O$ calculations in the article and, at least emprically, I can claim $n^{1/4}$ to be better. 
+	Statistical tests showed that $r = n^{1/4}$ achieves better performances, as it can be seen in Figure \ref{fig:r_choice}. I have tried them because I wasn't convinced by the big $O$ calculations in the article and, at least empirically, I can claim $n^{1/4}$ to be better. 
 
-	Observe that in our case we have $p \approx q \approx 2^{20}$, so $n\approx 2^{40}$ and $r = n^{1/4} \approx 2^{10}$. For the theorem \ref{teo:lehm} we need equation \ref{eq:lehm_cond} to be satisfied, i.e.:
+	Observe that in our case we have $p \approx q \approx 2^{20}$, so $n\approx 2^{40}$ and $r = n^{1/4} \approx 2^{10}$. For the theorem \ref{teo:lehm} we need equation \ref{eq:lehm_cond} to be satisfied. We can in fact easily see:
 	\begin{equation*}
 		\left(\frac{n}{r+1}\right)^{1/2} \approx \left( 2^{40-10} \right)^{1/2} \approx 2^{15} << 2^{20} \approx p
 	\end{equation*} 
+
+	Also since we have this condition met we can avoid the trial division (useless for RSA semiprimes). 
 \end{rem}
 
-In the article the authors observed that $k$ with an higher number of divisors are more likely to find a factorization, thus we should try them first. 
-The arrays in \texttt{C} are necessary to iterate over $k \in \{1,...,r\}$ passing before from numbers with more divisors, for example the multiple of $30$ and of $24$. Each \verb|array| contains a starting value for $k$ \verb|array[2]| that it is incremented using the elements of \verb|array[3]| cycled modulo \verb|array[1]| (the lenght of \verb|array[3]|). When $k > r$ then we change array. Observe that the odd $k$ values are done last (we will use this later). 
 
-Then we define $x := \lceil (4kn)^{1/2}\rceil $ and $ u := x^2 - 4kn$ (it is the candidate to $y^2$ as in \ref{eq:lehm_cond_xy}). The next two \texttt{if} conditions increment $x$ to have the conditions \ref{eq:lehm_cond_1} and \ref{eq:lehm_cond_2}. Observe that also $u$ is incremented using that:
+In the article the authors observed that $k$ with an higher number of divisors are more likely to find a factorization, thus we should try them first. 
+The arrays in \texttt{C} are necessary to iterate over $k \in \{1,...,r\}$ passing before from numbers with more divisors, for example the multiple of $30$ and of $24$. Each \verb|array| contains a starting value for $k$ \verb|array[2]| that it is incremented using the elements of \verb|array[3]| cycled modulo \verb|array[1]| (the length of \verb|array[3]|). When $k > r$ then we change array. Observe that the odd $k$ values are done last (we will use this later). 
+
+Then we define $x := \lceil (4kn)^{1/2}\rceil $ and $ u := x^2 - 4kn$ (it is the candidate to $y^2$ as in \ref{eq:lehm_cond_xy}). The next two \texttt{if} conditions increment $x$ to meet the conditions \ref{eq:lehm_cond_1} and \ref{eq:lehm_cond_2}. Observe that also $u$ is incremented using that:
 \begin{equation}
 	\label{eq:incr_u}
 	(x+b)^2 - 4kn = \underbrace{(x^2 - 4kn)}_{\text{previous }u} + 2\cdot b \cdot x + b^2
 \end{equation}
-So we don't have to evaluate other square roots. 
+So we don't have to evaluate other squares. 
 
-When we have the first $x$ we can start the iteration, incrementing by $\verb|jump| = 2$ for $k$ even and $4$ othewhise, using again the tecnique in equation \ref{eq:incr_u}. By the condition \ref{eq:lehm_cond_it} we have to iterate over \verb|[i1..(j+1) by jump]| where \verb|i1| is the number of $x$ skipped previously. 
+When we have the first $x$ we can start the iteration, incrementing by $\verb|jump| = 2$ for $k$ even and $4$ otherwise, using again the technique in equation \ref{eq:incr_u}. By the condition \ref{eq:lehm_cond_it} we have to iterate over \verb|[i1..(j+1) by jump]| where \verb|i1| is the number of $x$ skipped previously. 
 
 The only thing we miss now is to check whether or not $u$ is a perfect square $y^2$. Here we will use the boolean array \texttt{Qr}, 
-that it was initliazed by performing square modulo \verb|qr_mod| and setting to \texttt{true} only the quadratic residues. 
+that it was initialized by performing square modulo \verb|qr_mod| and setting to \texttt{true} only the quadratic residues. 
 The idea is to use that if $u$ is a perfect square, then it is a quadratic residue modulo \verb|qr_mod|. 
 So if \verb|Qr[u mod qr_mod]| is \texttt{false} surely it is not a perfect square. 
-Since in MAGMA the arrays start from $1$ we need to sligtly modify the modulo using some $-1$ and $+1$. 
+Since in MAGMA the arrays start from $1$ we need to slightly modify the modulo using some $-1$ and $+1$. 
+
+If we have that it is a quadratic residue we check if it is a perfect square $u = y^2$, if yes we factor $n$ evaluating $\gcd(x-y,n)$. Then it returns the two factors in increasing order.
+
+\subsubsection{The choice of qr mod}
 
 In the article \verb|qr_mod|$=729=3^6$ is used because the percentage of quadratic residues is approximately $ 38 \%$, but I have observed that we can do better. For example $385 = 5 \cdot 7 \cdot 11$ has only $18.7 \%$ of quadratic residues and gives more efficient results during computations.  
 I have actually tried all the possible \verb|qr_mod| up to $10000$, finding better choices (inserted in the code), and I have individuated as more efficient the value $3465 = 3^2 \cdot 5 \cdot 7 \cdot 11$. There where other possible good values, as you can see in figure \ref{fig:qr_choice}, all odd (but one) and with small factors. 
-They have all small factors because this reduce the quantity of quadratic residues (remind that for the Chinese reminder theorem an integer is a quadratic residue for $n$ if it is a quadratic residue modulo all the factors $p^e$ of $n$).
+They have all small factors because this reduce the quantity of quadratic residues (remind that for the Chinese reminder theorem an integer is a quadratic residue for $n$ if and only if it is a quadratic residue modulo all the factors $p^e$ of $n$).
 
 I think that they are odd because we start the iteration on the even $k$, so $x \equiv k+1 \equiv 1 \mod 2$ is odd, thus $u = x^2 - 4kn$ is odd, hence the distribution of the non quadratic residue is able to spot more non-squares. 
 
