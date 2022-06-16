@@ -80,19 +80,6 @@
 		\item Lehman factorization algorithm, based on a modification of the Fermat factorization algorithm.
 	\end{itemize}
 
-	The requests for the report are:
-
-
-	Assuming that a team has passed the first phase, then each team member must submit an individual report on the project. The report must be written in English and not more than 15 pages.
-	The report must include the following:
-	\begin{itemize}
-		\item your personal contribution to the team project (0-2 points)
-		\item a complete overview of the mathematical problems behind the algorithms (0-4
-points)
-		\item an in-depth explanation of the implementative choices (0-4 points)
-	\end{itemize}
-	You must also submit the code of the project. This may include some improvements that you personally added after the project submission.
-
 
 \end{abstract}
 
@@ -529,12 +516,23 @@ Then we initialize a boolean array \texttt{QR} (outside of the function), the va
 %   \label{fig:r_choice}
 %  \caption{Time for $r = n^{exp }$ }
 %\end{wrapfigure}
-\begin{figure}
-	\centering
+
+
+\begin{figure}[!tbp]
+  \centering
+  \begin{minipage}[b]{0.5\textwidth}
 	\label{fig:r_choice}
-	\includegraphics[width=0.45\textwidth]{r_coiche.png}
-  	\caption{Time for $r = n^{exp }$ }
+    \includegraphics[width=\textwidth]{r_coiche.png}
+    \caption{Time for $r = n^{exp }$ }
+  \end{minipage}
+  \hfill
+  \begin{minipage}[b]{0.45\textwidth}
+	  \label{fig:qr_choice}
+    \includegraphics[width=\textwidth]{qr_choiche.png}
+    \caption{optimal qr mod with factorization and time}
+  \end{minipage}
 \end{figure}
+
 
 \begin{rem}
 	Statistical tests showed that $r = n^{1/4}$ achieves better performances, as it can be seen in Figure \ref{fig:r_choice}. I have tried them because I wasn't conviced by the big $O$ calculations in the article and, at least emprically, I can claim $n^{1/4}$ to be better. 
@@ -546,7 +544,7 @@ Then we initialize a boolean array \texttt{QR} (outside of the function), the va
 \end{rem}
 
 In the article the authors observed that $k$ with an higher number of divisors are more likely to find a factorization, thus we should try them first. 
-The arrays in \texttt{C} are necessary to iterate over $k \in \{1,...,r\}$ passing before from numbers with more divisors, for example the multiple of $30$ and of $24$. Each \verb|array| contains a starting value for $k$ \verb|array[2]| that it is incremented using the elements of \verb|array[3]| cycled modulo \verb|array[1]| (the lenght of \verb|array[3]|). When $k > r$ then we change array. 
+The arrays in \texttt{C} are necessary to iterate over $k \in \{1,...,r\}$ passing before from numbers with more divisors, for example the multiple of $30$ and of $24$. Each \verb|array| contains a starting value for $k$ \verb|array[2]| that it is incremented using the elements of \verb|array[3]| cycled modulo \verb|array[1]| (the lenght of \verb|array[3]|). When $k > r$ then we change array. Observe that the odd $k$ values are done last (we will use this later). 
 
 Then we define $x := \lceil (4kn)^{1/2}\rceil $ and $ u := x^2 - 4kn$ (it is the candidate to $y^2$ as in \ref{eq:lehm_cond_xy}). The next two \texttt{if} conditions increment $x$ to have the conditions \ref{eq:lehm_cond_1} and \ref{eq:lehm_cond_2}. Observe that also $u$ is incremented using that:
 \begin{equation}
@@ -563,6 +561,11 @@ The idea is to use that if $u$ is a perfect square, then it is a quadratic resid
 So if \verb|Qr[u mod qr_mod]| is \texttt{false} surely it is not a perfect square. 
 Since in MAGMA the arrays start from $1$ we need to sligtly modify the modulo using some $-1$ and $+1$. 
 
+In the article \verb|qr_mod|$=729=3^6$ is used because the percentage of quadratic residues is approximately $ 38 \%$, but I have observed that we can do better. For example $385 = 5 \cdot 7 \cdot 11$ has only $18.7 \%$ of quadratic residues and gives more efficient results during computations.  
+I have actually tried all the possible \verb|qr_mod| up to $10000$, finding better choices (inserted in the code), and I have individuated as more efficient the value $3465 = 3^2 \cdot 5 \cdot 7 \cdot 11$. There where other possible good values, as you can see in figure \ref{fig:qr_choice}, all odd (but one) and with small factors. 
+They have all small factors because this reduce the quantity of quadratic residues (remind that for the Chinese reminder theorem an integer is a quadratic residue for $n$ if it is a quadratic residue modulo all the factors $p^e$ of $n$).
+
+I think that they are odd because we start the iteration on the even $k$, so $x \equiv k+1 \equiv 1 \mod 2$ is odd, thus $u = x^2 - 4kn$ is odd, hence the distribution of the non quadratic residue is able to spot more non-squares. 
 
 \newpage
 \printbibliography
