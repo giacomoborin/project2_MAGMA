@@ -6,6 +6,7 @@
 \usepackage{tikz-cd,wrapfig}
 \usepackage{tcolorbox}
 \usepackage{graphicx}
+\usepackage{wrapfig}
 \usepackage{pdfpages}
 \usepackage{enumitem}
 \usepackage{pdfsync}
@@ -102,17 +103,46 @@ In general functions already implemented in MAGMA are significantly faster than 
 
 \section{ECDSA}
 
-We have implemented the algorithm from~\cite[Section 6.6]{washington}.
+ECDSA is a Digital Singature Algorithm based on elliptic curves proposed by \cite{ECDSA} based on the difficulty of the discrete logarithm on them. 
 
-I've personally implemented all the code and a good part of the test vectors(it didn't took a lot of time), while Dario helped with debugging.
+The public setup of the scheme is composed by the finite field $\F_q$, an elliptic curve $E = E(\F_q)$ and a base point $G$ with order a large prime $r$. Then Alice can generate a private key $d\in \{2,..,r-1\}$ and publish the public key $d\cdot G$. The message is an integer $m$ (usually it is the hash of the message) and to sign it Alice has to perform:
+\begin{enumerate}
+	\item Choose a random $k$ with $1 \leq k < r$.
+	\item Evaluate $R = k \cdot G$.
+	\item Evaluare $ s = (m + d\cdot R_x) k^{-1} \mod r$, where $R = (R_x : R_y : 1)$.
+\end{enumerate}
+The signature of $m$ is then $(R,s)$.
+
+To verify it Bob has to:
+\begin{enumerate}
+	\item Compute $u_1 = s^{-1} m \mod r$ and $u_2 = s^{-1} R_x  \mod r$.
+	\item Evaluate $V = u_1 \cdot G + u_2 \cdot Q$. 
+	\item The signature is valid if $V = R$.
+\end{enumerate}
+
+\begin{teo}
+	Alice is generating a valid signature for each choices of the parameters
+\end{teo}
+\begin{proof}
+	We simply do the computation recalling that the calculations on the coefficents are done modulo the order $r$:
+	\begin{multline*}
+		V = u_1 \cdot G + u_2 \cdot Q = s^{-1} \cdot m \cdot G + s^{-1} \cdot R_x \cdot (d \cdot G) = \\
+		= s^{-1} (m + d\cdot R_x) \cdot G = k\cdot (m + d\cdot R_x)^{-1} (m + d\cdot R_x) \cdot G = \\
+		= k \cdot G = R
+	\end{multline*}
+\end{proof}
+
 
 \subsection{Implementation choiches}
 
-- following the washington
+We have implemented the algorithm from~\cite[Section 6.6]{washington}.
 
-It would be faster to use $k = 4$ as Sony, since it simplifies a lot the evaluation of $kG$ (in fact it would require only two doublings) but it would be very bad for security. However I have tried to use again the idea at the commit \href{https://github.com/giacomoborin/project2_MAGMA/commit/1209afbbb3bed86d26ebf342bf6f43453de3e795}{1209afb}.
+I've personally implemented all the code and a good part of the test vectors (it didn't took a lot of time), while Dario helped with debugging. The code is the plain transposition of the previous instructions in MAGMA, using the \texttt{EllipticCurve} operations, so there isn't much to say. I will reacall only some small observations.
 
-Some evaluation can be seen in the \href{https://github.com/giacomoborin/project2_MAGMA/pull/36}{associated pull request}.
+We can see that it would be faster to use a small $k$ (for example $k = 4$ as Sony), since it simplifies a lot the evaluation of $kG$ (in fact $k=4$ would require only two doublings) but it would be very bad for security. 
+However I have tried to use again the idea, considering $k \in [-\frac{r}{2}, \frac{r}{2}]$, so that the modulus is sligtly smaller and we save some doublings. To do this I have also defined the function \texttt{mmod(a,m)} that returns an integer in $[-\frac{r}{2}, \frac{r}{2}]$ equalt to $a$ modulo $m$. This idea saves only a small time ($0.1$ seconds)\footnote{Some evaluation can be seen in the \href{https://github.com/giacomoborin/project2_MAGMA/pull/36}{associated pull request}}.
+
+Another observation is that we have used \texttt{Modinv} to find the inverses modulo $r$ and in the verification algorithm we evaluate $s^{-1}$ only one time. Sadly we had to use two casts, since the coordinates of the point \texttt{R} and in the finite field, but we need type \texttt{Integers()} to perform the moltiplications. 
 
 %\begin{lstlisting}[language = magma]
 %> load "ECDSA.mag"; // k random
@@ -345,7 +375,7 @@ Then we check if $g^{\verb|sol|} \equiv h \mod p$, if not we restart the generat
 \subsubsection{Bound for iterative search} \label{sssec:bounds}
 To actually implement the strategy we need to choose \verb|bound_rows|, that decides when to start looking for solutions the first time, and \verb|bound_new_rows|, i.e. the new equations added before a new search for solutions. 
 The most naive solution is to start from $\# \BB + 1$ and add one equations at each step. Obviously this isn't very efficient, in particular the one step choice. 
-Also 
+First of all to define them I have decided to consider a percentage of $\# \BB$, then I have tried several combinations of the two bounds, in particular with \verb|bound_rows| less than $\# \BB$. After some attempts I have decided to try all the possible combinations and look for the optimal ones. 
 
 \begin{figure}[!tbp]
   \centering
@@ -439,7 +469,99 @@ There isn't much more to say with respect to the implementation, in fact the onl
 
 \section{Lehman}
 
-\appendix
+The Lehman factorization algorithm is a modification of the Fermat factorization algorithm proposed in \cite{lehman}. It has complexity of $O(n^{1/3})$ and it was the first hystorical example of an algorithm with time complexity less than $O(n^{1/2})$. 
+
+The principal result of the article is the following theorem:
+
+\begin{teo} \label{teo:lehm}
+	Suppose that $n = pq$ is a positive odd integer, with $p,q$ primes, and consider and integer $r \in \{ 1,...,\lfloor n^{1/2}\rfloor\}$. Suppose that it holds:
+	\begin{equation}
+		\label{eq:p_cond}
+		\left( \frac{n}{r+1}\right)^{1/2} < p \leq n^{1/2}
+	\end{equation}
+	Then there exists non negative integers $x,y$ and $k \in \{1,...,r\}$ such that:
+	\begin{subequations} \label{eq:lehm_cond}
+		\begin{align}
+			&x^2 - y^2 = 4kn, \label{eq:lehm_cond_xy}\\
+			&x \equiv k + 1 \mod 2, \label{eq:lehm_cond_1} \\
+			&x \equiv k + n \mod 4 \text{ if k is odd},\label{eq:lehm_cond_2} \\
+			&0 \leq x - (4kn)^{1/2} \leq \frac{1}{4(r+1)} \left(\frac{n}{k}\right)^{1/2} \label{eq:lehm_cond_it}
+		\end{align}
+	\end{subequations}
+	and we can use $x,y$ to factor $n$:
+	\begin{equation}
+		\label{eq:lehm_fact}
+		\{p,q\} = \{\gcd(x+y,n), \gcd(x-y,n)\}
+	\end{equation}
+	Instead if $n$ is prime no integers satisfy the equations in \ref{eq:lehm_cond}.
+\end{teo}
+
+So using the theorem we can write a factorization algorithm for semiprimes:
+\begin{enumerate}
+	\item \label{enum:trial_div} Do trial division up to $\left( \frac{n}{r+1}\right)^{1/2}$, since we can find only primes that satisfy equation \ref{eq:lehm_cond}.
+	\item Iterate for $k \in \{ 1,...,r\}$ 
+	\item \label{enum:lehm_xit} Iterate for $x \in \{ \lfloor (4kn)^{1/2}\rfloor , ..., \lceil \frac{1}{4(r+1)} \left(\frac{n}{k}\right)^{1/2} + (4kn)^{1/2} \rceil \}$ such that $x \equiv k + 1 \mod 2$ and, if $k$ is odd, $x \equiv k + n \mod 4$
+	\item If $x^2 - 4kn$ is a perfect square $y^2$ return the factorization: 
+		$$\{\gcd(x+y,n), \gcd(x-y,n)\}$$
+	\item If we can't find any factor after all the iterations we return that $n$ is prime.
+\end{enumerate}
+
+The trial division require $O\left( \left( \frac{n}{r}\right)^{1/2} \right)$ operations, while for each $k$ we have $O\left( \frac{1}{r} \left(\frac{n}{k}\right)^{1/2} \right)$ possible $x$ to check (there is also a constant quantity of operations to perform in order to evaluate the interval). So the total operations are:
+\begin{equation}
+	\label{eq:lehm_compl}
+	O\left( \left( \frac{n}{r}\right)^{1/2} \right) + \sum_{k =1}^r O\left( \frac{1}{r} \left(\frac{n}{k}\right)^{1/2} + 1\right)
+\end{equation}
+
+that for $r = O(n^{1/3})$ can be approximated to a complexity of $O(n^{1/3})$. This choice is not proven to be optimal, in fact for the calculation it is used that $ \sum_{i=1}^r O\left( \frac{1}{k^{1/2}}\right) \subset O(r^{1/2})$, and I think that we can do better (at least emprically I have observed that for $r = n^(1/4)$ we can do better).
+
+\subsection{Implementation}
+
+In \cite[Section 5]{lehman} is also inserted the algorithm written in \texttt{Algol} with some ideas to improve velocity, that I have followed in the MAGMA implementation. 
+
+First we define the function \texttt{isqrt} that returns $\lceil n^{1/2}\rceil$ and $\lceil n^{1/2}\rceil^2 - n$. It uses both \texttt{Sqrt} and \texttt{Ceiling}. 
+
+Then we initialize a boolean array \texttt{QR} (outside of the function), the value of $r$ as $\lceil n^{1/4} \rceil$ and a sequence of arrays \texttt{C}. 
+
+%\begin{wrapfigure}{r}{0.5\textwidth}
+% \begin{center}
+%   \includegraphics[width=0.45\textwidth]{r_coiche.png}
+% \end{center}
+%   \label{fig:r_choice}
+%  \caption{Time for $r = n^{exp }$ }
+%\end{wrapfigure}
+\begin{figure}
+	\centering
+	\label{fig:r_choice}
+	\includegraphics[width=0.45\textwidth]{r_coiche.png}
+  	\caption{Time for $r = n^{exp }$ }
+\end{figure}
+
+\begin{rem}
+	Statistical tests showed that $r = n^{1/4}$ achieves better performances, as it can be seen in Figure \ref{fig:r_choice}. I have tried them because I wasn't conviced by the big $O$ calculations in the article and, at least emprically, I can claim $n^{1/4}$ to be better. 
+
+	Observe that in our case we have $p \approx q \approx 2^{20}$, so $n\approx 2^{40}$ and $r = n^{1/4} \approx 2^{10}$. For the theorem \ref{teo:lehm} we need equation \ref{eq:lehm_cond} to be satisfied, i.e.:
+	\begin{equation*}
+		\left(\frac{n}{r+1}\right)^{1/2} \approx \left( 2^{40-10} \right)^{1/2} \approx 2^{15} << 2^{20} \approx p
+	\end{equation*} 
+\end{rem}
+
+In the article the authors observed that $k$ with an higher number of divisors are more likely to find a factorization, thus we should try them first. 
+The arrays in \texttt{C} are necessary to iterate over $k \in \{1,...,r\}$ passing before from numbers with more divisors, for example the multiple of $30$ and of $24$. Each \verb|array| contains a starting value for $k$ \verb|array[2]| that it is incremented using the elements of \verb|array[3]| cycled modulo \verb|array[1]| (the lenght of \verb|array[3]|). When $k > r$ then we change array. 
+
+Then we define $x := \lceil (4kn)^{1/2}\rceil $ and $ u := x^2 - 4kn$ (it is the candidate to $y^2$ as in \ref{eq:lehm_cond_xy}). The next two \texttt{if} conditions increment $x$ to have the conditions \ref{eq:lehm_cond_1} and \ref{eq:lehm_cond_2}. Observe that also $u$ is incremented using that:
+\begin{equation}
+	\label{eq:incr_u}
+	(x+b)^2 - 4kn = \underbrace{(x^2 - 4kn)}_{\text{previous }u} + 2\cdot b \cdot x + b^2
+\end{equation}
+So we don't have to evaluate other square roots. 
+
+When we have the first $x$ we can start the iteration, incrementing by $\verb|jump| = 2$ for $k$ even and $4$ othewhise, using again the tecnique in equation \ref{eq:incr_u}. By the condition \ref{eq:lehm_cond_it} we have to iterate over \verb|[i1..(j+1) by jump]| where \verb|i1| is the number of $x$ skipped previously. 
+
+The only thing we miss now is to check whether or not $u$ is a perfect square $y^2$. Here we will use the boolean array \texttt{Qr}, 
+that it was initliazed by performing square modulo \verb|qr_mod| and setting to \texttt{true} only the quadratic residues. 
+The idea is to use that if $u$ is a perfect square, then it is a quadratic residue modulo \verb|qr_mod|. 
+So if \verb|Qr[u mod qr_mod]| is \texttt{false} surely it is not a perfect square. 
+Since in MAGMA the arrays start from $1$ we need to sligtly modify the modulo using some $-1$ and $+1$. 
 
 
 \newpage
