@@ -33,7 +33,7 @@ function SolveSystem(B,VectorOfexponent,SeqMatrixOfexponent,p,g,h,q)
 	return CRT([Integers()!Sol2[dim], Integers()!Solq[dim]], [2,q]);
 end function;
 
-
+T := [0];
 
 //////Primes p are Sophie Germain p=2q+1//////
 function IndexCalculus(p,g,h)
@@ -73,6 +73,7 @@ function IndexCalculus(p,g,h)
 	*/
 	bound_rows := Floor((#B)*(0.78));
 	bound_new_rows :=Floor((#B)*(0.32));
+	trial := 0;
 	repeat
 		new_rows := 0;
 		repeat 
@@ -95,4 +96,3 @@ function IndexCalculus(p,g,h)
 	return sol;
 end function;
 
-load "Test_IndexCalculus.mag";
