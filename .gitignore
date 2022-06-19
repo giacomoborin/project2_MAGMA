@@ -306,3 +306,8 @@ TSWLatexianTemp*
 # Uncomment the next line to have this generated file ignored.
 #*Notes.bib
 *.zip
+report_giacomo/highlight/magma 2.lang
+report_giacomo/highlight/Magma 2.plist
+report_giacomo/highlight/magma 2.xml
+report_giacomo/listing_magma_README 2.txt
+report_giacomo/lstlang0 2.sty
